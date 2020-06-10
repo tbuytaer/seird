@@ -1,5 +1,9 @@
 import csv
 import os
+import matplotlib.pyplot as plt
+
+# Clear the terminal
+os.system('clear')
 
 # Read data from Johns Hopkins
 file_jh_confirmed = './johns-hopkins-data/time_series_covid19_confirmed_global.csv'
@@ -42,17 +46,59 @@ for country_ori in countries_ori:
             notfound = False
             countries.append(country_ISO)
     
+# Number of days for which we have dat in the file
+countries_data = []
+number_of_days = len(hopkins_confirmed[1]) - 4
+print(number_of_days)
+for country in countries:
+    temp_confirmed = [0 for i in range(number_of_days)]
+    temp_deaths = [0 for i in range(number_of_days)]
+
+    # combine rows that belong to the same country
+    for row in hopkins_confirmed:
+        if country[1] == row[1]:
+            #temp_confirmed = temp_confirmed + row[4:]
+            temp_confirmed = [int(temp_confirmed[i]) + int(row[4:][i]) for i in range(number_of_days)]
+    for row in hopkins_deaths:
+        if country[1] == row[1]:
+            temp_deaths = [int(temp_deaths[i]) + int(row[4:][i]) for i in range(number_of_days)]
+
+    # Create lists of differences
+    temp_confirmed_prev = temp_confirmed[:-1]
+    temp_confirmed_prev.insert(0,0)
+    temp_confirmed_delta = [int(temp_confirmed[i]) - int(temp_confirmed_prev[i]) for i in range(len(temp_confirmed))]
+    temp_deaths_prev = temp_deaths[:-1]
+    temp_deaths_prev.insert(0,0)
+    temp_deaths_delta = [int(temp_deaths[i]) - int(temp_deaths_prev[i]) for i in range(len(temp_deaths))]
+    
+    country_data = {
+        'name': country[1],
+        'confirmed': temp_confirmed,
+        'deaths': temp_deaths,
+        'confirmed_delta': temp_confirmed_delta,
+        'deaths_delta': temp_deaths_delta
+    }
+    countries_data.append(country_data)
 
 
+# Plot a graph
+fig, ax = plt.subplots()
+plt.style.use('seaborn')
+x_values = list(range(number_of_days))
+ax.scatter(x_values, countries_data[16]['confirmed'],s=4)
+ax.scatter(x_values, countries_data[16]['deaths'],s=4)
+ax.scatter(x_values, countries_data[16]['confirmed_delta'],s=4)
+ax.scatter(x_values, countries_data[16]['deaths_delta'],s=4)
+plt.savefig("test.png")
 
-
-# Clear the terminal
-os.system('clear')
+# Output to terminal
 print(f"JH Confirmed: {len(hopkins_confirmed)} rows")
 print(f"JH Deaths: {len(hopkins_deaths)} rows")
 print(f"{len(countries_ori)} countries ORI")
 print(f"{len(countries_ISO)} countries ISO")
 print(f"{len(countries)} countries NOW")
-#print(countries_ori)
-#print(countries_ISO)
-#print(countries)
+print(temp_confirmed_delta)
+print(temp_confirmed)
+print(f"{len(countries_data)} countries data")
+print(countries_data[16]['name'])
+print(countries_data[16]['confirmed'])
