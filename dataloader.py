@@ -64,17 +64,20 @@ def load_data():
         # Create lists of differences
         temp_confirmed_prev = temp_confirmed[:-1]
         temp_confirmed_prev.insert(0,0)
-        temp_confirmed_delta = [int(temp_confirmed[i]) - int(temp_confirmed_prev[i]) for i in range(len(temp_confirmed))]
+        temp_d_confirmed = [int(temp_confirmed[i]) - int(temp_confirmed_prev[i]) for i in range(len(temp_confirmed))]
         temp_deaths_prev = temp_deaths[:-1]
         temp_deaths_prev.insert(0,0)
-        temp_deaths_delta = [int(temp_deaths[i]) - int(temp_deaths_prev[i]) for i in range(len(temp_deaths))]
+        temp_d_deaths = [int(temp_deaths[i]) - int(temp_deaths_prev[i]) for i in range(len(temp_deaths))]
         
         country_data = {
             'name': country[1],
             'confirmed': temp_confirmed,
             'deaths': temp_deaths,
-            'confirmed_delta': temp_confirmed_delta,
-            'deaths_delta': temp_deaths_delta
+            'd_confirmed': temp_d_confirmed,
+            'd_deaths': temp_d_deaths
         }
         countries_data.append(country_data)
-    return countries_data
+    return {
+        'countries': countries,
+        'countries_data': countries_data,
+    }
