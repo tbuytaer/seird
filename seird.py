@@ -63,8 +63,7 @@ def country_SIR(country, window = 4, future = 30):
     """ calculate SIR model for a country, with a certain window size, and a number of days ahead """
     CFR = countries_data[country]['deaths'][-1] / countries_data[country]['confirmed'][-1]
 
-    #population0 = countries[2]
-    population0 = 100000
+    population0 = int(countries[country][2])
     incubation0 = 5
     infected0 = 1
     epsilon = 1/2
@@ -107,6 +106,7 @@ def country_SIR(country, window = 4, future = 30):
     list_d_deaths = []
     list_infected_new = []
     list_risk = []
+    # Append the daily values to the lists
     for day in range(0,len(countries_data[country]['confirmed']) + future):
         temp_sir = SIR(country, day, population0, incubation0, infected0, epsilon, gamma, delta, listr0)
         list_susceptible.append(temp_sir['susceptible'])
@@ -118,8 +118,7 @@ def country_SIR(country, window = 4, future = 30):
         list_d_deaths.append(temp_sir['d_deaths'])
         list_infected_new.append(temp_sir['infected_new'])
         list_risk.append(temp_sir['risk'])
-
-
+    # Return the lists
     country_sir = {
         'susceptible': list_susceptible,
         'infected': list_infected,
@@ -131,40 +130,33 @@ def country_SIR(country, window = 4, future = 30):
         'infected_new': list_infected_new,
         'risk': list_risk,
         'r0': listr0,
+        'CFR': CFR,
     }
-
     return country_sir
 
 
-
-
-
+chosen_country = 16
+some_country = country_SIR(chosen_country)
 today = len(countries_data[1]['confirmed'])
 
-
-
-belgique = country_SIR(16)
-print(countries_data[16]['name'])
-print(countries_data[16]['confirmed'])
+# Output some of the data to terminal
+print(countries_data[chosen_country]['name'])
+print(countries_data[chosen_country]['confirmed'])
+print(some_country['r0'])
 
 # Plot a graph
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(15,10))
 plt.style.use('seaborn')
+
 x_values = list(range(number_of_days))
-ax.scatter(x_values, countries_data[16]['confirmed'],s=4)
-ax.scatter(x_values, countries_data[16]['deaths'],s=4)
-ax.scatter(x_values, countries_data[16]['d_confirmed'],s=4)
-ax.scatter(x_values, countries_data[16]['d_deaths'],s=4)
-plt.savefig("belgique.png")
+ax.scatter(x_values, countries_data[chosen_country]['confirmed'],s=4)
+ax.scatter(x_values, countries_data[chosen_country]['deaths'],s=4)
+ax.scatter(x_values, countries_data[chosen_country]['d_confirmed'],s=4)
+ax.scatter(x_values, countries_data[chosen_country]['d_deaths'],s=4)
 
-fig, ax2 = plt.subplots()
-x_values2 = list(range(number_of_days+30))
-print(len(belgique['cumulative']))
-print(belgique['infected_new'])
-print(belgique['r0'])
+x_values2 = list(range(number_of_days + 30))
+ax.plot(x_values2, some_country['cumulative'], linewidth=1)
+ax.plot(x_values2, some_country['deaths'], linewidth=1)
+ax.plot(x_values2, some_country['infected'], linewidth=1)
 
-ax2.scatter(x_values2, belgique['cumulative'],s=4)
-ax2.scatter(x_values2, belgique['deaths'],s=4)
-ax2.scatter(x_values2, belgique['infected'],s=4)
-
-plt.savefig("belgique2.png")
+plt.savefig('some-country.png', bbox_inches='tight')
