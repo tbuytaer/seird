@@ -32,6 +32,7 @@ def parallel_sir(country_id):
     some_country = country_SIR(countries, countries_data, country_id)
     print(f"\t{countries_data[country_id]['name']} -> {some_country['r0'][-1]}")
 
+
 # Count the processors for parallel processing
 pool = mp.Pool(mp.cpu_count())
 pool.map(parallel_sir, [country_id for country_id in range(len(countries)) ] )
@@ -45,23 +46,24 @@ print(f"\nStart: {time.asctime(time.localtime(start))}")
 print(f"End: {time.asctime(time.localtime(end))}")
 print(f"Duration: {duration:.1f} seconds")
 
-
-
 # Plot a graph
-fig, ax = plt.subplots(figsize=(15,10))
+fig, axs = plt.subplots(2, figsize=(15,10))
 plt.style.use('seaborn')
 chosen_country = 16
-some_country = country_SIR(countries, countries_data, chosen_country)
+some_country = country_SIR(countries, countries_data, chosen_country, average=2)
 
 x_values = list(range(number_of_days))
-ax.scatter(x_values, countries_data[chosen_country]['confirmed'],s=4)
-ax.scatter(x_values, countries_data[chosen_country]['deaths'],s=4)
-ax.scatter(x_values, countries_data[chosen_country]['d_confirmed'],s=4)
-ax.scatter(x_values, countries_data[chosen_country]['d_deaths'],s=4)
+axs[0].scatter(x_values, countries_data[chosen_country]['confirmed'],s=4)
+axs[0].scatter(x_values, countries_data[chosen_country]['deaths'],s=4)
+axs[0].scatter(x_values, countries_data[chosen_country]['d_confirmed'],s=4)
+axs[0].scatter(x_values, countries_data[chosen_country]['d_deaths'],s=4)
 
 x_values2 = list(range(number_of_days + 30))
-ax.plot(x_values2, some_country['cumulative'], linewidth=1)
-ax.plot(x_values2, some_country['deaths'], linewidth=1)
-ax.plot(x_values2, some_country['infected'], linewidth=1)
+axs[0].plot(x_values2, some_country['cumulative'], linewidth=1)
+axs[0].plot(x_values2, some_country['deaths'], linewidth=1)
+axs[0].plot(x_values2, some_country['infected'], linewidth=1)
+
+axs[1].plot(x_values2, some_country['r0'], linewidth=1)
+axs[1].set_ylim([0,4])
 
 plt.savefig('some-country.png', bbox_inches='tight')

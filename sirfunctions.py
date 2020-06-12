@@ -1,4 +1,6 @@
-def SIR(countries_data, country, dday, population0, incubation0, infected0, epsilon, gamma, delta, listr0):
+import numpy
+
+def SIR(countries_data, country, dday, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed):
     """ calculate SIR model for a country, up till a certain day, with a set of initial parameters """
     population = population0
     incubation = incubation0
@@ -8,6 +10,7 @@ def SIR(countries_data, country, dday, population0, incubation0, infected0, epsi
     cumulative = infected + recovered + deaths
     susceptible = population - incubation - infected -recovered - deaths
     cost = 0
+
     for sirday in range(0, dday + 1):
         lamb = (gamma + delta) * listr0[sirday]
         d_susceptible = - lamb * infected * (susceptible / population)
@@ -26,7 +29,8 @@ def SIR(countries_data, country, dday, population0, incubation0, infected0, epsi
         population = susceptible + incubation + infected + recovered
         risk = infected * listr0[sirday]
         if sirday < len(countries_data[country]['confirmed']):
-            cost += (cumulative - countries_data[country]['confirmed'][sirday]) ** 2
+            #cost += (cumulative - countries_data[country]['confirmed'][sirday]) ** 2
+            cost += (cumulative - running_average_confirmed[sirday]) ** 2
     sir = {
         'susceptible': susceptible,
         'infected': infected,
@@ -42,9 +46,14 @@ def SIR(countries_data, country, dday, population0, incubation0, infected0, epsi
     return sir
 
 
-def country_SIR(countries, countries_data, country, window = 4, future = 30):
+def country_SIR(countries, countries_data, country, window = 4, future = 30, average = 3):
     """ calculate SIR model for a country, with a certain window size, and a number of days ahead """
     CFR = countries_data[country]['deaths'][-1] / countries_data[country]['confirmed'][-1]
+
+    running_average_confirmed = running_mean(countries_data[country]['confirmed'], average)
+    #print(f"Running average: {countries_data[country]['confirmed']}")
+    #print(f"Running average: {running_average_confirmed}")
+
 
     population0 = int(countries[country][2])
     incubation0 = 5
@@ -61,7 +70,7 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30):
     # fit model to the data
     for day in range(0, len(countries_data[country]['confirmed']) - window):
         bestr0 = listr0[day]
-        sir = SIR(countries_data, country, day + window, population0, incubation0, infected0, epsilon, gamma, delta, listr0)
+        sir = SIR(countries_data, country, day + window, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed)
         bestcost = sir['cost']
         # range uses int, so we will need to divide this r0 by 100 later: 5 should become 0.05. 
         for r0 in range(10, 2000, 5):
@@ -69,7 +78,7 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30):
             for futureday in range(0, len(listr0) - day):
                 # r0 is still an integer. Divide it by 100
                 listr0[day + futureday] = r0 / 100
-            sir_temp = SIR(countries_data, country, day + window, population0, incubation0, infected0, epsilon, gamma, delta, listr0)
+            sir_temp = SIR(countries_data, country, day + window, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed)
             if sir_temp['cost'] < bestcost:
                 bestcost = sir_temp['cost']
                 # r0 is still an integer. Divide it by 100
@@ -91,7 +100,7 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30):
     list_risk = []
     # Append the daily values to the lists
     for day in range(0,len(countries_data[country]['confirmed']) + future):
-        temp_sir = SIR(countries_data, country, day, population0, incubation0, infected0, epsilon, gamma, delta, listr0)
+        temp_sir = SIR(countries_data, country, day, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed)
         list_susceptible.append(temp_sir['susceptible'])
         list_infected.append(temp_sir['infected'])
         list_recovered.append(temp_sir['recovered'])
@@ -116,3 +125,24 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30):
         'CFR': CFR,
     }
     return country_sir
+
+
+def running_mean(x, N):
+    """ Take the running mean of list x, over N past and N future elements."""
+    # Add the first number N times so we end up with the same number of elements at the end
+    x = numpy.insert(x, 0, [x[0] for i in range(N)])
+    x = numpy.insert(x, -1, [x[-1] for i in range(N)])
+    cumsum = numpy.cumsum(x)
+    # cumsum[N:] is cumulative sum, shifted N elements to the left. So each element is what total will be N elements later.
+    # cumsum[:-N] is cumulative sum now
+    # So cumsum[N:] - cumsum[:N] gives total over next N elements
+    return (cumsum[2*N:] - cumsum[:-2*N]) / float(2*N)
+
+def running_mean_past(x, N):
+    """ Take the running mean of list x, over N elements."""
+    # Add the first number N times so we end up with the same number of elements at the end
+    cumsum = numpy.cumsum(numpy.insert(x, 0, [x[0] for i in range(N)]))
+    # cumsum[N:] is cumulative sum, shifted N elements to the left. So each element is what total will be N elements later.
+    # cumsum[:-N] is cumulative sum now
+    # So cumsum[N:] - cumsum[:N] gives total over next N elements
+    return (cumsum[N:] - cumsum[:-N]) / float(N)
