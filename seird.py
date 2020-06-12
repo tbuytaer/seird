@@ -2,6 +2,7 @@ import csv
 import os
 import matplotlib.pyplot as plt
 import time
+import multiprocessing as mp
 
 from sirfunctions import SIR
 from sirfunctions import country_SIR
@@ -27,9 +28,16 @@ today = len(countries_data[1]['confirmed'])
 # Calculate SIR for all countries and output progress to terminal
 print("\nLast calculated Re per country:")
 
-for country_id in range(len(countries)):
+def parallel_sir(country_id):
     some_country = country_SIR(countries, countries_data, country_id)
     print(f"\t{countries_data[country_id]['name']} -> {some_country['r0'][-1]}")
+
+# Count the processors for parallel processing
+pool = mp.Pool(mp.cpu_count())
+pool.map(parallel_sir, [country_id for country_id in range(len(countries)) ] )
+
+pool.close()
+
 
 end = time.time()
 duration = end - start
@@ -43,6 +51,8 @@ print(f"Duration: {duration:.1f} seconds")
 fig, ax = plt.subplots(figsize=(15,10))
 plt.style.use('seaborn')
 chosen_country = 16
+some_country = country_SIR(countries, countries_data, chosen_country)
+
 x_values = list(range(number_of_days))
 ax.scatter(x_values, countries_data[chosen_country]['confirmed'],s=4)
 ax.scatter(x_values, countries_data[chosen_country]['deaths'],s=4)
