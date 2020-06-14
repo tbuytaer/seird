@@ -89,7 +89,6 @@ jason_file = 'export/world-R0.json'
 with open(jason_file, 'w') as f:
     json.dump(jason, f, indent=4)
 
-
 # Calculated CFR, only if Standard Deviation less than 1% and non-zero
 country_cfrs = []
 for country in range(len(countrysirs)):
@@ -100,8 +99,11 @@ jason_file = 'export/world-CFR.json'
 with open(jason_file, 'w') as f:
     json.dump(jason, f, indent=4)
 
-# Risk
-
+# This is a calculated risk
+jason = [{ 'id': countrysirs[country]['iso'], 'nr': countrysirs[country]['country_id'], 'value': countrysirs[country]['sir']['risk'][-(future + 1)] } for country in range(len(countrysirs))]
+jason_file = 'export/world-risk.json'
+with open(jason_file, 'w') as f:
+    json.dump(jason, f, indent=4)
 
 # Plot a graph
 fig, axs = plt.subplots(2, figsize=(15,10))

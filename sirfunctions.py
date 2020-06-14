@@ -27,7 +27,7 @@ def SIR(countries_data, country, dday, population0, incubation0, infected0, epsi
         deaths += d_deaths
         cumulative += d_cumulative
         population = susceptible + incubation + infected + recovered
-        risk = infected * listr0[sirday]
+        risk = infected * listr0[sirday] * 100_000 / population
         if sirday < len(countries_data[country]['confirmed']):
             #cost += (cumulative - countries_data[country]['confirmed'][sirday]) ** 2
             cost += (cumulative - running_average_confirmed[sirday]) ** 2
@@ -69,10 +69,7 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
     CFR = numpy.mean(cfr_temp)
     CFR_std = numpy.std(cfr_temp)
 
-
-
     running_average_confirmed = running_mean(countries_data[country]['confirmed'], average)
-
 
     population0 = int(countries[country][2])
     incubation0 = 5
@@ -92,7 +89,7 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
         sir = SIR(countries_data, country, day + window, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed)
         bestcost = sir['cost']
         # range uses int, so we will need to divide this r0 by 100 later: 5 should become 0.05. 
-        for r0 in range(10, 2000, 500):
+        for r0 in range(10, 2000, 5):
             # set this selected r0 for all following days
             for futureday in range(0, len(listr0) - day):
                 # r0 is still an integer. Divide it by 100
