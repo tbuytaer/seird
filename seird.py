@@ -121,6 +121,30 @@ for country in range(len(countrysirs)):
     with open(jason_file, 'w') as f:
         json.dump(jason, f, indent=4)
 
+    # Calculated files: confirmed
+    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir']['cumulative'][day]} for day in range(len(countrysirs[country]['sir']['cumulative']))]
+    jason_file = f"export/country-{country}-c.json"
+    with open(jason_file, 'w') as f:
+        json.dump(jason, f, indent=4)
+
+    # Calculated files: deaths
+    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir']['deaths'][day]} for day in range(len(countrysirs[country]['sir']['deaths']))]
+    jason_file = f"export/country-{country}-m.json"
+    with open(jason_file, 'w') as f:
+        json.dump(jason, f, indent=4)
+
+    # Calculated files: active
+    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir']['infected'][day]} for day in range(len(countrysirs[country]['sir']['infected']))]
+    jason_file = f"export/country-{country}-i.json"
+    with open(jason_file, 'w') as f:
+        json.dump(jason, f, indent=4)
+
+    # Calculated files: Re
+    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir']['r0'][day]} for day in range(len(countrysirs[country]['sir']['r0']))]
+    jason_file = f"export/country-{country}-r0.json"
+    with open(jason_file, 'w') as f:
+        json.dump(jason, f, indent=4)
+
 
 
 # Plot a graph
