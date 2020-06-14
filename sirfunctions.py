@@ -48,11 +48,30 @@ def SIR(countries_data, country, dday, population0, incubation0, infected0, epsi
 
 def country_SIR(countries, countries_data, country, window = 4, future = 30, average = 3):
     """ calculate SIR model for a country, with a certain window size, and a number of days ahead """
+    # Don't use this one anymore, use the mean CFR we calculate next
     CFR = countries_data[country]['deaths'][-1] / countries_data[country]['confirmed'][-1]
 
+    confirmeds = numpy.array(countries_data[country]['confirmed'], dtype='float')
+    cfr_temp = []
+    for delay in range (1, 20):
+        # shift array with deaths to the left by 'delay' days, and divide by 'confirmed' array
+        deaths_shifted = numpy.array(numpy.concatenate((countries_data[country]['deaths'][delay:], [0 for i in range(delay)])), dtype='float')
+        # divide deaths / cases. If cases = 0, output 0 instead
+        cfrs = numpy.divide(deaths_shifted, confirmeds, out=numpy.zeros_like(deaths_shifted), where=confirmeds!=0)
+        # get index of last non-zero value
+        last_cfr_index = numpy.nonzero(cfrs)
+        # add the CFR for this delay to list cfr_temp
+        try:
+            cfr_temp.append(cfrs[last_cfr_index[0][-1]])
+        except IndexError:
+            # There were no non-zero elements, so set CFR to zero. Otherwise the Python gets angry.
+            cfr_temp.append(0)
+    CFR = numpy.mean(cfr_temp)
+    CFR_std = numpy.std(cfr_temp)
+
+
+
     running_average_confirmed = running_mean(countries_data[country]['confirmed'], average)
-    #print(f"Running average: {countries_data[country]['confirmed']}")
-    #print(f"Running average: {running_average_confirmed}")
 
 
     population0 = int(countries[country][2])
@@ -73,7 +92,7 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
         sir = SIR(countries_data, country, day + window, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed)
         bestcost = sir['cost']
         # range uses int, so we will need to divide this r0 by 100 later: 5 should become 0.05. 
-        for r0 in range(10, 2000, 5):
+        for r0 in range(10, 2000, 500):
             # set this selected r0 for all following days
             for futureday in range(0, len(listr0) - day):
                 # r0 is still an integer. Divide it by 100
@@ -123,6 +142,7 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
         'risk': list_risk,
         'r0': listr0,
         'CFR': CFR,
+        'CFR_std': CFR_std
     }
     return country_sir
 
@@ -146,3 +166,6 @@ def running_mean_past(x, N):
     # cumsum[:-N] is cumulative sum now
     # So cumsum[N:] - cumsum[:N] gives total over next N elements
     return (cumsum[N:] - cumsum[:-N]) / float(N)
+
+
+

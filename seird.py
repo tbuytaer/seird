@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import time
 import multiprocessing as mp
 import json
+import numpy
 
 from sirfunctions import SIR
 from sirfunctions import country_SIR
@@ -40,7 +41,7 @@ def parallel_sir(country_id):
         'sir': some_country,
     }
     return country_sir
-    
+#country_SIR(countries, countries_data, 16, average = 3, future = future)    
 # Count the processors for parallel processing
 pool = mp.Pool(mp.cpu_count())
 countrysirs = pool.map(parallel_sir, [country_id for country_id in range(len(countries)) ] )
@@ -52,9 +53,14 @@ print(f"\nStart: {time.asctime(time.localtime(start))}")
 print(f"End: {time.asctime(time.localtime(end))}")
 #print(f"{countrysirs[16]}")
 
-
 print(f"{countrysirs[16]['country_id']} {countrysirs[16]['name']} {countrysirs[16]['sir']['cumulative']}")
 print(f"{countrysirs[16]['country_id']} {countrysirs[16]['name']} {countrysirs[16]['sir']['cumulative'][-(future + 1)]}")
+
+
+
+
+
+
 
 #jason = [{'id': countrysirs[country]['iso'], 'nr': countrysirs[country]['country_id'], 'value': countrysirs[country]['sir']['cumulative'][-(future + 1)] * 100_000 / int(countries[country][2])} for country in range(len(countrysirs))]
 # I want to output as float with 2 decimals, so f"{something:.2f}" to print it with 2 decimal places, and then convert back to a float
@@ -71,13 +77,11 @@ jason_file = 'export/world-active.json'
 with open(jason_file, 'w') as f:
     json.dump(jason, f, indent=4)
 
-
 # Deaths
 jason = [{'id': countrysirs[country]['iso'], 'nr': countrysirs[country]['country_id'], 'value': float(f"{countrysirs[country]['sir']['deaths'][-(future + 1)] * 100_000 / int(countries[country][2]):.1f}")} for country in range(len(countrysirs))]
 jason_file = 'export/world-deaths.json'
 with open(jason_file, 'w') as f:
     json.dump(jason, f, indent=4)
-
 
 # Calculated Re
 jason = [{ 'id': countrysirs[country]['iso'], 'nr': countrysirs[country]['country_id'], 'value': countrysirs[country]['sir']['r0'][-(future + 1)] } for country in range(len(countrysirs))]
@@ -85,6 +89,18 @@ jason_file = 'export/world-R0.json'
 with open(jason_file, 'w') as f:
     json.dump(jason, f, indent=4)
 
+
+# Calculated CFR, only if Standard Deviation less than 1% and non-zero
+country_cfrs = []
+for country in range(len(countrysirs)):
+    if countrysirs[country]['sir']['CFR_std'] <= 0.01 and countrysirs[country]['sir']['CFR_std'] > 0.0:
+        country_cfrs.append(countrysirs[country])
+jason = [{ 'id': country_cfrs[country]['iso'], 'nr': country_cfrs[country]['country_id'], 'value': float(f"{100 * country_cfrs[country]['sir']['CFR']:.1f}"), 'std': float(f"{100 * country_cfrs[country]['sir']['CFR_std']:.1f}") } for country in range(len(country_cfrs))]
+jason_file = 'export/world-CFR.json'
+with open(jason_file, 'w') as f:
+    json.dump(jason, f, indent=4)
+
+# Risk
 
 
 # Plot a graph
