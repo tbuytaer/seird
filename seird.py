@@ -12,9 +12,13 @@ from sirfunctions import SIR
 from sirfunctions import country_SIR
 from dataloader import load_data
 
-
 # Clear the terminal
 os.system('clear')
+
+# Fit the model to data that has been averaged out over this amount of days before and after each date
+average = 3
+# Calculate this number of days ahead if current Re stays the same
+future = 30
 
 # Get the data from Johns Hopkins
 JH_data = load_data()
@@ -22,19 +26,15 @@ countries_data = JH_data['countries_data']
 countries = JH_data['countries']
 
 number_of_days = len(countries_data[1]['confirmed'])
-
-future = 14
-
-start = time.time()
-print(f"\nStart: {time.asctime(time.localtime(start))}")
-
 today = len(countries_data[1]['confirmed'])
 
-# Calculate SIR for all countries and output progress to terminal
-print("\nLast calculated Re per country:")
 
+# Calculate SIR for all countries and output progress to terminal
+start = time.time()
+print(f"\nStart: {time.asctime(time.localtime(start))}")
+print("\nLast calculated Re per country:")
 def parallel_sir(country_id):
-    some_country = country_SIR(countries, countries_data, country_id, average = 3, future = future)
+    some_country = country_SIR(countries, countries_data, country_id, average = average, future = future)
     print(f"\t{countries_data[country_id]['name']} -> {some_country['r0'][-1]}")
     country_sir = {
         'country_id': country_id,
@@ -42,32 +42,19 @@ def parallel_sir(country_id):
         'iso': countries[country_id][0],
         'sir': some_country,
     }
-    return country_sir
-#country_SIR(countries, countries_data, 16, average = 3, future = future)    
+    return country_sir 
 # Count the processors for parallel processing
 pool = mp.Pool(mp.cpu_count())
 countrysirs = pool.map(parallel_sir, [country_id for country_id in range(len(countries)) ] )
-
 pool.close()
 end = time.time()
 duration = end - start
 print(f"\nStart: {time.asctime(time.localtime(start))}")
 print(f"End: {time.asctime(time.localtime(end))}")
-#print(f"{countrysirs[16]}")
 
-
-#print(f"{countrysirs[16]['country_id']} {countrysirs[16]['name']} {countrysirs[16]['sir']['cumulative']}")
-#print(f"{countrysirs[16]['country_id']} {countrysirs[16]['name']} {countrysirs[16]['sir']['cumulative'][-(future + 1)]}")
-
-
-
-
-
-
-#jason = [{'id': countrysirs[country]['iso'], 'nr': countrysirs[country]['country_id'], 'value': countrysirs[country]['sir']['cumulative'][-(future + 1)] * 100_000 / int(countries[country][2])} for country in range(len(countrysirs))]
-# I want to output as float with 2 decimals, so f"{something:.2f}" to print it with 2 decimal places, and then convert back to a float
-
+# output JSON files
 # Cumulative cases
+# I want to output as float with 2 decimals, so f"{something:.2f}" to print it with 2 decimal places, and then convert back to a float
 jason = [{'id': countrysirs[country]['iso'], 'nr': countrysirs[country]['country_id'], 'value': float(f"{countrysirs[country]['sir']['cumulative'][-(future + 1)] * 100_000 / int(countries[country][2]):.2f}")} for country in range(len(countrysirs))]
 jason_file = 'export/world-cumulative.json'
 with open(jason_file, 'w') as f:
@@ -107,7 +94,6 @@ jason_file = 'export/world-risk.json'
 with open(jason_file, 'w') as f:
     json.dump(jason, f, indent=4)
 
-
 # Country files: date as x-value
 for country in range(len(countrysirs)):
     # JH files: confirmed
@@ -145,13 +131,17 @@ for country in range(len(countrysirs)):
     with open(jason_file, 'w') as f:
         json.dump(jason, f, indent=4)
 
-
+# TODO: Recovered world map?
+# TODO: Diff infections to plot per country? (JH & calculated)
+# TODO: Diff deaths to plot per country? (JH & calculated)
+# TODO: Recovered to plot per country? (JH & calculated)
+# TODO: Risk to plot per country?
 
 # Plot a graph
 fig, axs = plt.subplots(2, figsize=(15,10))
 plt.style.use('seaborn')
 chosen_country = 16
-some_country = country_SIR(countries, countries_data, chosen_country, average = 3, future = future)
+some_country = country_SIR(countries, countries_data, chosen_country, average = average, future = future)
 
 x_values = list(range(number_of_days))
 axs[0].scatter(x_values, countries_data[chosen_country]['confirmed'],s=4)
