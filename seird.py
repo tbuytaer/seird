@@ -5,6 +5,8 @@ import time
 import multiprocessing as mp
 import json
 import numpy
+from datetime import date
+from datetime import timedelta
 
 from sirfunctions import SIR
 from sirfunctions import country_SIR
@@ -53,9 +55,9 @@ print(f"\nStart: {time.asctime(time.localtime(start))}")
 print(f"End: {time.asctime(time.localtime(end))}")
 #print(f"{countrysirs[16]}")
 
-print(f"{countrysirs[16]['country_id']} {countrysirs[16]['name']} {countrysirs[16]['sir']['cumulative']}")
-print(f"{countrysirs[16]['country_id']} {countrysirs[16]['name']} {countrysirs[16]['sir']['cumulative'][-(future + 1)]}")
 
+#print(f"{countrysirs[16]['country_id']} {countrysirs[16]['name']} {countrysirs[16]['sir']['cumulative']}")
+#print(f"{countrysirs[16]['country_id']} {countrysirs[16]['name']} {countrysirs[16]['sir']['cumulative'][-(future + 1)]}")
 
 
 
@@ -104,6 +106,22 @@ jason = [{ 'id': countrysirs[country]['iso'], 'nr': countrysirs[country]['countr
 jason_file = 'export/world-risk.json'
 with open(jason_file, 'w') as f:
     json.dump(jason, f, indent=4)
+
+
+# Country files: date as x-value
+for country in range(len(countrysirs)):
+    # JH files: confirmed
+    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countries_data[country]['confirmed'][day]} for day in range(len(countries_data[country]['confirmed']))]
+    jason_file = f"export/country-{country}-jh-confirmed.json"
+    with open(jason_file, 'w') as f:
+        json.dump(jason, f, indent=4)
+    # JH files: deaths
+    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countries_data[country]['deaths'][day]} for day in range(len(countries_data[country]['deaths']))]
+    jason_file = f"export/country-{country}-jh-deaths.json"
+    with open(jason_file, 'w') as f:
+        json.dump(jason, f, indent=4)
+
+
 
 # Plot a graph
 fig, axs = plt.subplots(2, figsize=(15,10))
