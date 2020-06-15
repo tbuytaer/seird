@@ -49,7 +49,7 @@ def SIR(countries_data, country, dday, population0, incubation0, infected0, epsi
 def country_SIR(countries, countries_data, country, window = 4, future = 30, average = 3):
     """ calculate SIR model for a country, with a certain window size, and a number of days ahead """
     # Don't use this one anymore, use the mean CFR we calculate next
-    CFR = countries_data[country]['deaths'][-1] / countries_data[country]['confirmed'][-1]
+    #CFR = countries_data[country]['deaths'][-1] / countries_data[country]['confirmed'][-1]
 
     confirmeds = numpy.array(countries_data[country]['confirmed'], dtype='float')
     cfr_temp = []

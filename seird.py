@@ -20,8 +20,13 @@ average = 3
 # Calculate this number of days ahead if current Re stays the same
 future = 30
 
+# Choose which region to calculate
+# Valid choices: world, USA
+#region = "world"
+region = "USA"
+
 # Get the data from Johns Hopkins
-JH_data = load_data()
+JH_data = load_data(region=region)
 countries_data = JH_data['countries_data']
 countries = JH_data['countries']
 
@@ -56,25 +61,29 @@ print(f"End: {time.asctime(time.localtime(end))}")
 # Cumulative cases
 # I want to output as float with 2 decimals, so f"{something:.2f}" to print it with 2 decimal places, and then convert back to a float
 jason = [{'id': countrysirs[country]['iso'], 'nr': countrysirs[country]['country_id'], 'value': float(f"{countrysirs[country]['sir']['cumulative'][-(future + 1)] * 100_000 / int(countries[country][2]):.2f}")} for country in range(len(countrysirs))]
-jason_file = 'export/world-cumulative.json'
+#jason_file = 'export/world-cumulative.json'
+jason_file = f"export/{region}-cumulative.json"
 with open(jason_file, 'w') as f:
     json.dump(jason, f, indent=4)
 
 # Active cases
 jason = [{'id': countrysirs[country]['iso'], 'nr': countrysirs[country]['country_id'], 'value': float(f"{countrysirs[country]['sir']['infected'][-(future + 1)] * 100_000 / int(countries[country][2]):.2f}")} for country in range(len(countrysirs))]
-jason_file = 'export/world-active.json'
+#jason_file = 'export/world-active.json'
+jason_file = f"export/{region}-active.json"
 with open(jason_file, 'w') as f:
     json.dump(jason, f, indent=4)
 
 # Deaths
 jason = [{'id': countrysirs[country]['iso'], 'nr': countrysirs[country]['country_id'], 'value': float(f"{countrysirs[country]['sir']['deaths'][-(future + 1)] * 100_000 / int(countries[country][2]):.1f}")} for country in range(len(countrysirs))]
-jason_file = 'export/world-deaths.json'
+#jason_file = 'export/world-deaths.json'
+jason_file = f"export/{region}-deaths.json"
 with open(jason_file, 'w') as f:
     json.dump(jason, f, indent=4)
 
 # Calculated Re
 jason = [{ 'id': countrysirs[country]['iso'], 'nr': countrysirs[country]['country_id'], 'value': countrysirs[country]['sir']['r0'][-(future + 1)] } for country in range(len(countrysirs))]
-jason_file = 'export/world-R0.json'
+#jason_file = 'export/world-R0.json'
+jason_file = f"export/{region}-R0.json"
 with open(jason_file, 'w') as f:
     json.dump(jason, f, indent=4)
 
@@ -84,50 +93,58 @@ for country in range(len(countrysirs)):
     if countrysirs[country]['sir']['CFR_std'] <= 0.01 and countrysirs[country]['sir']['CFR_std'] > 0.0:
         country_cfrs.append(countrysirs[country])
 jason = [{ 'id': country_cfrs[country]['iso'], 'nr': country_cfrs[country]['country_id'], 'value': float(f"{100 * country_cfrs[country]['sir']['CFR']:.1f}"), 'std': float(f"{100 * country_cfrs[country]['sir']['CFR_std']:.1f}") } for country in range(len(country_cfrs))]
-jason_file = 'export/world-CFR.json'
+#jason_file = 'export/world-CFR.json'
+jason_file = f"export/{region}-CFR.json"
 with open(jason_file, 'w') as f:
     json.dump(jason, f, indent=4)
 
 # This is a calculated risk
 jason = [{ 'id': countrysirs[country]['iso'], 'nr': countrysirs[country]['country_id'], 'value': countrysirs[country]['sir']['risk'][-(future + 1)] } for country in range(len(countrysirs))]
-jason_file = 'export/world-risk.json'
+#jason_file = 'export/world-risk.json'
+jason_file = f"export/{region}-risk.json"
 with open(jason_file, 'w') as f:
     json.dump(jason, f, indent=4)
 
 # Country files: date as x-value
 for country in range(len(countrysirs)):
     # JH files: confirmed
-    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countries_data[country]['confirmed'][day]} for day in range(len(countries_data[country]['confirmed']))]
-    jason_file = f"export/country-{country}-jh-confirmed.json"
+    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countries_data[country]['confirmed'][day] } for day in range(len(countries_data[country]['confirmed']))]
+    #jason_file = f"export/country-{country}-jh-confirmed.json"
+    jason_file = f"export/{region}-{country}-jh-confirmed.json"
     with open(jason_file, 'w') as f:
         json.dump(jason, f, indent=4)
     # JH files: deaths
-    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countries_data[country]['deaths'][day]} for day in range(len(countries_data[country]['deaths']))]
-    jason_file = f"export/country-{country}-jh-deaths.json"
+    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countries_data[country]['deaths'][day] } for day in range(len(countries_data[country]['deaths']))]
+    #jason_file = f"export/country-{country}-jh-deaths.json"
+    jason_file = f"export/{region}-{country}-jh-deaths.json"
     with open(jason_file, 'w') as f:
         json.dump(jason, f, indent=4)
 
     # Calculated files: confirmed
-    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir']['cumulative'][day]} for day in range(len(countrysirs[country]['sir']['cumulative']))]
-    jason_file = f"export/country-{country}-c.json"
+    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir']['cumulative'][day] } for day in range(len(countrysirs[country]['sir']['cumulative']))]
+    #jason_file = f"export/country-{country}-c.json"
+    jason_file = f"export/{region}-{country}-c.json"
     with open(jason_file, 'w') as f:
         json.dump(jason, f, indent=4)
 
     # Calculated files: deaths
-    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir']['deaths'][day]} for day in range(len(countrysirs[country]['sir']['deaths']))]
-    jason_file = f"export/country-{country}-m.json"
+    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir']['deaths'][day] } for day in range(len(countrysirs[country]['sir']['deaths']))]
+    #jason_file = f"export/country-{country}-m.json"
+    jason_file = f"export/{region}-{country}-m.json"
     with open(jason_file, 'w') as f:
         json.dump(jason, f, indent=4)
 
     # Calculated files: active
-    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir']['infected'][day]} for day in range(len(countrysirs[country]['sir']['infected']))]
-    jason_file = f"export/country-{country}-i.json"
+    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': float(f"{countrysirs[country]['sir']['infected'][day]:.0f}") } for day in range(len(countrysirs[country]['sir']['infected']))]
+    #jason_file = f"export/country-{country}-i.json"
+    jason_file = f"export/{region}-{country}-i.json"
     with open(jason_file, 'w') as f:
         json.dump(jason, f, indent=4)
 
     # Calculated files: Re
-    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir']['r0'][day]} for day in range(len(countrysirs[country]['sir']['r0']))]
-    jason_file = f"export/country-{country}-r0.json"
+    jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir']['r0'][day] } for day in range(len(countrysirs[country]['sir']['r0']))]
+    #jason_file = f"export/country-{country}-r0.json"
+    jason_file = f"export/{region}-{country}-r0.json"
     with open(jason_file, 'w') as f:
         json.dump(jason, f, indent=4)
 
@@ -148,6 +165,7 @@ axs[0].scatter(x_values, countries_data[chosen_country]['confirmed'],s=4)
 axs[0].scatter(x_values, countries_data[chosen_country]['deaths'],s=4)
 axs[0].scatter(x_values, countries_data[chosen_country]['d_confirmed'],s=4)
 axs[0].scatter(x_values, countries_data[chosen_country]['d_deaths'],s=4)
+axs[0].set_title(countries[chosen_country][1])
 
 x_values2 = list(range(number_of_days + future))
 axs[0].plot(x_values2, some_country['cumulative'], linewidth=1)
