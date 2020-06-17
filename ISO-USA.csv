@@ -1,53 +1,52 @@
-rank,State,Population
-1,California,39937489
-2,Texas,29472295
-3,Florida,21992985
-4,New York,19440469
-5,Pennsylvania,12820878
-6,Illinois,12659682
-7,Ohio,11747694
-8,Georgia,10736059
-9,North Carolina,10611862
-10,Michigan,10045029
-11,New Jersey,8936574
-12,Virginia,8626207
-13,Washington,7797095
-14,Arizona,7378494
-15,Massachusetts,6976597
-16,Tennessee,6897576
-17,Indiana,6745354
-18,Missouri,6169270
-19,Maryland,6083116
-20,Wisconsin,5851754
-21,Colorado,5845526
-22,Minnesota,5700671
-23,South Carolina,5210095
-24,Alabama,4908621
-25,Louisiana,4645184
-26,Kentucky,4499692
-27,Oregon,4301089
-28,Oklahoma,3954821
-29,Connecticut,3563077
-30,Utah,3282115
-31,Iowa,3179849
-32,Nevada,3139658
-33,Arkansas,3038999
-34,Puerto Rico,3032165
-35,Mississippi,2989260
-36,Kansas,2910357
-37,New Mexico,2096640
-38,Nebraska,1952570
-39,Idaho,1826156
-40,West Virginia,1778070
-41,Hawaii,1412687
-42,New Hampshire,1371246
-43,Maine,1345790
-44,Montana,1086759
-45,Rhode Island,1056161
-46,Delaware,982895
-47,South Dakota,903027
-48,North Dakota,761723
-49,Alaska,734002
-50,District of Columbia,720687
-51,Vermont,628061
-52,Wyoming,567025
+ISO,State,Population
+US-AL,Alabama,4779736
+US-AK,Alaska,710231
+US-AZ,Arizona,6392017
+US-AR,Arkansas,2915918
+US-CA,California,37253956
+US-CO,Colorado,5029196
+US-CT,Connecticut,3574097
+US-DE,Delaware,897934
+US-DC,District of Columbia,601723
+US-FL,Florida,18801310
+US-GA,Georgia,9687653
+US-HI,Hawaii,1360301
+US-ID,Idaho,1567582
+US-IL,Illinois,12830632
+US-IN,Indiana,6483802
+US-IA,Iowa,3046355
+US-KS,Kansas,2853118
+US-KY,Kentucky,4339367
+US-LA,Louisiana,4533372
+US-ME,Maine,1328361
+US-MD,Maryland,5773552
+US-MA,Massachusetts,6547629
+US-MI,Michigan,9883640
+US-MN,Minnesota,5303925
+US-MS,Mississippi,2967297
+US-MO,Missouri,5988927
+US-MT,Montana,989415
+US-NE,Nebraska,1826341
+US-NV,Nevada,2700551
+US-NH,New Hampshire,1316470
+US-NJ,New Jersey,8791894
+US-NM,New Mexico,2059179
+US-NY,New York,19378102
+US-NC,North Carolina,9535483
+US-ND,North Dakota,672591
+US-OH,Ohio,11536504
+US-OK,Oklahoma,3751351
+US-OR,Oregon,3831074
+US-PA,Pennsylvania,12702379
+US-RI,Rhode Island,1052567
+US-SC,South Carolina,4625364
+US-SD,South Dakota,81418
+US-TN,Tennessee,6346105
+US-TX,Texas,25145561
+US-UT,Utah,2763885
+US-VT,Vermont,625741
+US-VA,Virginia,8001024
+US-WA,Washington,6724540
+US-WV,West Virginia,1852994
+US-WI,Wisconsin,5686986
+US-WY,Wyoming,563626

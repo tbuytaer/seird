@@ -50,7 +50,7 @@ def load_data(region="world"):
 
     # List of ISO countries that can be found in Johns Hopkins files. This is the one we will be using.
     countries = []
-    print(countries_ori)
+    #print(countries_ori)
     for country_ori in countries_ori:
         if region == "USA":
             # Don't assume Americans know which states they have and how to spell their names.
