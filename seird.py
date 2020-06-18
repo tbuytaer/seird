@@ -7,6 +7,7 @@ import json
 import numpy
 from datetime import date
 from datetime import timedelta
+import sys
 
 from sirfunctions import SIR
 from sirfunctions import country_SIR
@@ -22,9 +23,24 @@ average = 3
 future = 30
 
 # Choose which region to calculate
+# python3.7 <region>
 # Valid choices: world, USA
-#region = "world"
-region = "USA"
+
+print(sys.argv)
+if len(sys.argv) == 1:
+    print(f"No region option given. Using default option 'world'.")
+    region = "world"
+elif len(sys.argv) == 2:
+    if sys.argv[1] == "USA":
+        region = "USA"
+    elif sys.argv[1] == "world":
+        region = "world"
+    else:
+        print(f"Invalid option {sys.argv[1]}. Using default option 'world'.")
+        region = "world"
+else:
+    print(f"Too many options. This confuses me so I'm just using default option 'world'.")
+    region = "world"
 
 # Get the data from Johns Hopkins
 download_data()
