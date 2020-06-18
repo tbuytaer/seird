@@ -1,4 +1,21 @@
 import csv
+import urllib.request
+
+def download_data():
+    """ Download data files from Johns Hopkins."""
+    base_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/'
+    file_list = [
+        'time_series_covid19_confirmed_global.csv',
+        'time_series_covid19_recovered_global.csv',
+        'time_series_covid19_deaths_global.csv',
+        'time_series_covid19_confirmed_US.csv',
+        'time_series_covid19_deaths_US.csv',
+    ]
+    localfolder = './johns-hopkins-data/'
+    for file in file_list:
+        url = f"{base_url}{file}"
+        filename = f"{localfolder}{file}"
+        urllib.request.urlretrieve(url, filename)
 
 def load_data(region="world"):
     """ Read data from Johns Hopkins files. The 'region' parameter decides which files to load and which columns."""

@@ -10,6 +10,7 @@ from datetime import timedelta
 
 from sirfunctions import SIR
 from sirfunctions import country_SIR
+from dataloader import download_data
 from dataloader import load_data
 
 # Clear the terminal
@@ -26,13 +27,13 @@ future = 30
 region = "USA"
 
 # Get the data from Johns Hopkins
+download_data()
 JH_data = load_data(region=region)
 countries_data = JH_data['countries_data']
 countries = JH_data['countries']
 
 number_of_days = len(countries_data[1]['confirmed'])
 today = len(countries_data[1]['confirmed'])
-
 
 # Calculate SIR for all countries and output progress to terminal
 start = time.time()
