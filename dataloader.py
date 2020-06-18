@@ -57,7 +57,7 @@ def load_data(region="world"):
 
     # List of countries in Johns Hopkins files
     countries_ori = []
-    print(len(hopkins_confirmed))
+    # print(len(hopkins_confirmed))
     for row in hopkins_confirmed:
         if region == "USA":
             countries_ori.append(row[6])
