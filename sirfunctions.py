@@ -1,6 +1,6 @@
 import numpy
 
-def SIR(countries_data, country, dday, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed):
+def SIR(countries_data, country, dday, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed, average):
     """ calculate SIR model for a country, up till a certain day, with a set of initial parameters """
     population = population0
     incubation = incubation0
@@ -28,7 +28,7 @@ def SIR(countries_data, country, dday, population0, incubation0, infected0, epsi
         cumulative += d_cumulative
         population = susceptible + incubation + infected + recovered
         risk = infected * listr0[sirday] * 100_000 / population
-        if sirday < len(countries_data[country]['confirmed']):
+        if sirday < len(countries_data[country]['confirmed']) - average:
             #cost += (cumulative - countries_data[country]['confirmed'][sirday]) ** 2
             cost += (cumulative - running_average_confirmed[sirday]) ** 2
     sir = {
@@ -86,7 +86,7 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
     # fit model to the data
     for day in range(0, len(countries_data[country]['confirmed']) - window):
         bestr0 = listr0[day]
-        sir = SIR(countries_data, country, day + window, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed)
+        sir = SIR(countries_data, country, day + window, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed, average)
         bestcost = sir['cost']
         # range uses int, so we will need to divide this r0 by 100 later: 5 should become 0.05. 
         for r0 in range(10, 2000, 5):
@@ -94,7 +94,7 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
             for futureday in range(0, len(listr0) - day):
                 # r0 is still an integer. Divide it by 100
                 listr0[day + futureday] = r0 / 100
-            sir_temp = SIR(countries_data, country, day + window, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed)
+            sir_temp = SIR(countries_data, country, day + window, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed, average)
             if sir_temp['cost'] < bestcost:
                 bestcost = sir_temp['cost']
                 # r0 is still an integer. Divide it by 100
@@ -116,7 +116,7 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
     list_risk = []
     # Append the daily values to the lists
     for day in range(0,len(countries_data[country]['confirmed']) + future):
-        temp_sir = SIR(countries_data, country, day, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed)
+        temp_sir = SIR(countries_data, country, day, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed, average)
         list_susceptible.append(temp_sir['susceptible'])
         list_infected.append(temp_sir['infected'])
         list_recovered.append(temp_sir['recovered'])
@@ -145,23 +145,31 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
 
 
 def running_mean(x, N):
-    """ Take the running mean of list x, over N past and N future elements."""
-    # Add the first number N times so we end up with the same number of elements at the end
+    """
+    Take the running mean of list x, over N past and N future elements.
+    Since the last element is copied N times, the last N means will give increasing weight to the last value in the array.
+    """
+    # Shift list N elements to the right.
     x = numpy.insert(x, 0, [x[0] for i in range(N)])
-    x = numpy.insert(x, -1, [x[-1] for i in range(N)])
+    # Take the cumulative sum.
     cumsum = numpy.cumsum(x)
-    # cumsum[N:] is cumulative sum, shifted N elements to the left. So each element is what total will be N elements later.
-    # cumsum[:-N] is cumulative sum now
-    # So cumsum[N:] - cumsum[:-N] gives total over next N elements
+    # cumsum[2*N:] is cumulative sum, shifted 2*N elements to the left. So each element is what total will be 2*N elements later.
+    # But we already shifted N to the right.
+    # So cumsum[2*N:] is total N elements in the future.
+    # cumsum[:-2*N] is cumulative sum N elements ago because the array was shifted N elements to the right.
+    # We drop the last 2*N elements to have the same length as the other list.
+    # So cumsum[2*N:] - cumsum[:-2*N] gives total over N past and N future elements
     return (cumsum[2*N:] - cumsum[:-2*N]) / float(2*N)
 
 def running_mean_past(x, N):
     """ Take the running mean of list x, over N past elements."""
-    # Add the first number N times so we end up with the same number of elements at the end
+    # Shift list N elements to the right and take the cumulative sum.
     cumsum = numpy.cumsum(numpy.insert(x, 0, [x[0] for i in range(N)]))
     # cumsum[N:] is cumulative sum, shifted N elements to the left. So each element is what total will be N elements later.
-    # cumsum[:-N] is cumulative sum now
-    # So cumsum[N:] - cumsum[:-N] gives total over next N elements
+    # But we already shifted N to the right. So we actually end up with the cumulative sum of the original list.
+    # cumsum[:-N] is cumulative sum N elements ago because the array was shifted N elements to the right.
+    # We drop the last N elements to have the same length as the other list.
+    # So cumsum[N:] - cumsum[:-N] gives total over past N elements
     return (cumsum[N:] - cumsum[:-N]) / float(N)
 
 
