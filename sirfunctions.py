@@ -152,16 +152,16 @@ def running_mean(x, N):
     cumsum = numpy.cumsum(x)
     # cumsum[N:] is cumulative sum, shifted N elements to the left. So each element is what total will be N elements later.
     # cumsum[:-N] is cumulative sum now
-    # So cumsum[N:] - cumsum[:N] gives total over next N elements
+    # So cumsum[N:] - cumsum[:-N] gives total over next N elements
     return (cumsum[2*N:] - cumsum[:-2*N]) / float(2*N)
 
 def running_mean_past(x, N):
-    """ Take the running mean of list x, over N elements."""
+    """ Take the running mean of list x, over N past elements."""
     # Add the first number N times so we end up with the same number of elements at the end
     cumsum = numpy.cumsum(numpy.insert(x, 0, [x[0] for i in range(N)]))
     # cumsum[N:] is cumulative sum, shifted N elements to the left. So each element is what total will be N elements later.
     # cumsum[:-N] is cumulative sum now
-    # So cumsum[N:] - cumsum[:N] gives total over next N elements
+    # So cumsum[N:] - cumsum[:-N] gives total over next N elements
     return (cumsum[N:] - cumsum[:-N]) / float(N)
 
 

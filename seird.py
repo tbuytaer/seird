@@ -45,7 +45,7 @@ def generate_jsons():
     duration = end - start
     print(f"\nStart: {time.asctime(time.localtime(start))}")
     print(f"End: {time.asctime(time.localtime(end))}")
-    print(f"Duration: {duration} seconds")
+    print(f"Duration: {str(timedelta(seconds=duration))}")
 
     # output JSON files
     # Cumulative cases
@@ -184,21 +184,20 @@ download_data()
 # python3.7 <region>
 # Valid choices: world, USA
 
-print(sys.argv)
 if len(sys.argv) == 1:
-    print(f"No region option given. Using default option 'world'.")
+    print(f"No region option given. Generating data for all of them.")
+    region = "USA"
+    JH_data = load_data(region=region)
+    countries_data = JH_data['countries_data']
+    countries = JH_data['countries']
+    generate_jsons()
     region = "world"
     # Load the data from Johns Hopkins
     JH_data = load_data(region=region)
     countries_data = JH_data['countries_data']
     countries = JH_data['countries']
     generate_jsons()
-    region = "USA"
-    # Load the data from Johns Hopkins
-    JH_data = load_data(region=region)
-    countries_data = JH_data['countries_data']
-    countries = JH_data['countries']
-    generate_jsons()
+
 elif len(sys.argv) == 2:
     if sys.argv[1] == "USA":
         region = "USA"
