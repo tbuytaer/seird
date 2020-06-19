@@ -182,9 +182,9 @@ download_data()
 
 # Choose which region to calculate
 # python3.7 <region>
-# Valid choices: world, USA
+# Valid choices: all, world, USA
 
-if len(sys.argv) == 1:
+if len(sys.argv) == 1 or (len(sys.argv) == 2 and sys.argv[1] == "all"):
     print(f"No region option given. Generating data for all of them.")
     region = "USA"
     JH_data = load_data(region=region)
@@ -197,7 +197,6 @@ if len(sys.argv) == 1:
     countries_data = JH_data['countries_data']
     countries = JH_data['countries']
     generate_jsons()
-
 elif len(sys.argv) == 2:
     if sys.argv[1] == "USA":
         region = "USA"
