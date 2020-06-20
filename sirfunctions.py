@@ -48,11 +48,10 @@ def SIR(countries_data, country, dday, population0, incubation0, infected0, epsi
 
 def country_SIR(countries, countries_data, country, window = 4, future = 30, average = 3):
     """ calculate SIR model for a country, with a certain window size, and a number of days ahead """
-    # Don't use this one anymore, use the mean CFR we calculate next
-    #CFR = countries_data[country]['deaths'][-1] / countries_data[country]['confirmed'][-1]
 
-    confirmeds = numpy.array(countries_data[country]['confirmed'], dtype='float')
+    # Calculate CFR with standard deviation
     cfr_temp = []
+    confirmeds = numpy.array(countries_data[country]['confirmed'], dtype='float')
     for delay in range (1, 20):
         # shift array with deaths to the left by 'delay' days, and divide by 'confirmed' array
         deaths_shifted = numpy.array(numpy.concatenate((countries_data[country]['deaths'][delay:], [0 for i in range(delay)])), dtype='float')
@@ -69,17 +68,22 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
     CFR = numpy.mean(cfr_temp)
     CFR_std = numpy.std(cfr_temp)
 
-    running_average_confirmed = running_mean(countries_data[country]['confirmed'], average)
-
-    population0 = int(countries[country][2])
-    incubation0 = 5
-    infected0 = 1
+    # Hardcoded parameters.
     epsilon = 1/2
     gamma = (1 - CFR) / 12.4
     delta = CFR / 10.4
-    listr0 = []
+
+    # These ones actually don't matter that much. Infections at the start are from abroad, not community spread.
+    # Which means we will get unrealistic values in the beginning of the graphs until community spread starts to dominate.
+    incubation0 = 5
+    infected0 = 1
+
+    # Initial values for this country
+    population0 = int(countries[country][2])
+    running_average_confirmed = running_mean(countries_data[country]['confirmed'], average)
 
     # create a list of default R0 values. They will be replaced with better values later.
+    listr0 = []
     for day in range(0, len(countries_data[country]['confirmed']) + future):
         listr0.append(4.3)
 
@@ -171,6 +175,3 @@ def running_mean_past(x, N):
     # We drop the last N elements to have the same length as the other list.
     # So cumsum[N:] - cumsum[:-N] gives total over past N elements
     return (cumsum[N:] - cumsum[:-N]) / float(N)
-
-
-
