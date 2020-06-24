@@ -133,32 +133,42 @@ def generate_jsons():
     # TODO: Risk to plot per country?
 
     # Plot a graph
-    fig, axs = plt.subplots(2, figsize=(15,10))
-    plt.style.use('seaborn')
+    plt.style.use('bmh')
+    fig, axs = plt.subplots(4, figsize=(15,20), gridspec_kw={'height_ratios': [2,1,1,1]})
     chosen_country = 16
     some_country = country_SIR(countries, countries_data, chosen_country, average = average, future = future)
 
-    # Scatter plots with values from JH
     x_values = list(range(number_of_days))
-    axs[0].scatter(x_values, countries_data[chosen_country]['confirmed'],s=4)
-    axs[0].scatter(x_values, countries_data[chosen_country]['deaths'],s=4)
-    axs[0].scatter(x_values, countries_data[chosen_country]['d_confirmed'],s=4)
-    axs[0].scatter(x_values, countries_data[chosen_country]['d_deaths'],s=4)
-    axs[0].set_title(countries[chosen_country][1])
-
-    # Line plots with calculcated values from model
     x_values2 = list(range(number_of_days + future))
-    axs[0].plot(x_values2, some_country['cumulative'], linewidth=1)
-    axs[0].plot(x_values2, some_country['deaths'], linewidth=1)
-    axs[0].plot(x_values2, some_country['infected'], linewidth=1)
+    # Scatter plots with values from JH
+    axs[0].set_title(countries[chosen_country][1])
+    axs[0].scatter(x_values, countries_data[chosen_country]['confirmed'], s=4, c='cadetblue')
+    axs[0].scatter(x_values, countries_data[chosen_country]['deaths'], s=4, c='firebrick')
+    # Line plots with calculcated values from model
+    axs[0].plot(x_values2, some_country['cumulative'], linewidth=1, c='darkslateblue')
+    axs[0].plot(x_values2, some_country['deaths'], linewidth=1, c='firebrick')
+    axs[0].plot(x_values2, some_country['infected'], linewidth=1, c='cornflowerblue')
+    axs[0].fill_between(x_values2, some_country['infected'], facecolor='lightsteelblue')
 
     # Line plot with calculated R-value from model
-    axs[1].plot(x_values2, some_country['r0'], linewidth=1)
+    axs[1].set_title(f"Last R: {some_country['r0'][-1]}", loc='right')
+    axs[1].set_ylabel("R-value")
+    axs[1].plot(x_values2, some_country['r0'], linewidth=1, c='steelblue')
+    axs[1].fill_between(x_values2, some_country['r0'], facecolor='lightsteelblue')
     axs[1].set_ylim([0,5])
+
+    # Scatter plots with values from JH
+    axs[2].set_ylabel("New infected")
+    axs[2].scatter(x_values, countries_data[chosen_country]['d_confirmed'], s=4, c='darkslateblue')
+    axs[2].plot(x_values2, some_country['infected_new'], linewidth=1, c='royalblue')
+
+    # Line plots with calculated values from model
+    axs[3].set_ylabel("New deaths")
+    axs[3].scatter(x_values, countries_data[chosen_country]['d_deaths'], s=4, c='firebrick')
+    axs[3].plot(x_values2, some_country['d_deaths'], linewidth=1, c='firebrick')
 
     # Save plot with name of this state
     plt.savefig(f"./export/{countries[chosen_country][1]}.png", bbox_inches='tight')
-
 
 # Clear the terminal
 os.system('clear')
