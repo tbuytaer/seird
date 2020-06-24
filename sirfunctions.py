@@ -63,29 +63,11 @@ def SIR(countries_data, country, dday, population, incubation, infected, epsilon
 def country_SIR(countries, countries_data, country, window = 4, future = 30, average = 3):
     """ calculate SIR model for a country, with a certain window size, and a number of days ahead """
 
-    # Calculate CFR with standard deviation
-    cfr_temp = []
-    confirmeds = numpy.array(countries_data[country]['confirmed'], dtype='float')
-    for delay in range (1, 20):
-        # shift array with deaths to the left by 'delay' days, and divide by 'confirmed' array
-        deaths_shifted = numpy.array(numpy.concatenate((countries_data[country]['deaths'][delay:], [0 for i in range(delay)])), dtype='float')
-        # divide deaths / cases. If cases = 0, output 0 instead
-        cfrs = numpy.divide(deaths_shifted, confirmeds, out=numpy.zeros_like(deaths_shifted), where=confirmeds!=0)
-        # get index of last non-zero value
-        last_cfr_index = numpy.nonzero(cfrs)
-        # add the CFR for this delay to list cfr_temp
-        try:
-            cfr_temp.append(cfrs[last_cfr_index[0][-1]])
-        except IndexError:
-            # There were no non-zero elements, so set CFR to zero. Otherwise the Python gets angry.
-            cfr_temp.append(0)
-    CFR = numpy.mean(cfr_temp)
-    CFR_std = numpy.std(cfr_temp)
-
+    CFR = country_CFR(countries_data, country)
     # Hardcoded parameters.
     epsilon = 1/2
-    gamma = (1 - CFR) / 12.4
-    delta = CFR / 10.4
+    gamma = (1 - CFR['CFR']) / 12.4
+    delta = CFR['CFR'] / 10.4
 
     # Initial values for this country
     initial_values = {
@@ -175,8 +157,8 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
         'infected_new': list_infected_new,
         'risk': list_risk,
         'r0': listr0,
-        'CFR': CFR,
-        'CFR_std': CFR_std
+        'CFR': CFR['CFR'],
+        'CFR_std': CFR['CFR_std'],
     }
     return country_sir
 
@@ -208,3 +190,26 @@ def running_mean_past(x, N):
     # We drop the last N elements to have the same length as the other list.
     # So cumsum[N:] - cumsum[:-N] gives total over past N elements
     return (cumsum[N:] - cumsum[:-N]) / float(N)
+
+def country_CFR(countries_data, country):
+    """ Calculate CFR with standard deviation """
+    cfr_temp = []
+    confirmeds = numpy.array(countries_data[country]['confirmed'], dtype='float')
+    for delay in range (1, 20):
+        # shift array with deaths to the left by 'delay' days, and divide by 'confirmed' array
+        deaths_shifted = numpy.array(numpy.concatenate((countries_data[country]['deaths'][delay:], [0 for i in range(delay)])), dtype='float')
+        # divide deaths / cases. If cases = 0, output 0 instead
+        cfrs = numpy.divide(deaths_shifted, confirmeds, out=numpy.zeros_like(deaths_shifted), where=confirmeds!=0)
+        # get index of last non-zero value
+        last_cfr_index = numpy.nonzero(cfrs)
+        # add the CFR for this delay to list cfr_temp
+        try:
+            cfr_temp.append(cfrs[last_cfr_index[0][-1]])
+        except IndexError:
+            # There were no non-zero elements, so set CFR to zero. Otherwise the Python gets angry.
+            cfr_temp.append(0)
+    CFR = {
+        'CFR': numpy.mean(cfr_temp),
+        'CFR_std': numpy.std(cfr_temp),
+    }
+    return CFR
