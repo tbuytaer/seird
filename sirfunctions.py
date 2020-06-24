@@ -1,17 +1,13 @@
 import numpy
+import copy
 
-def SIR(countries_data, country, dday, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed, average):
+def SIR(countries_data, country, dday, population, incubation, infected, epsilon, gamma, delta, listr0, running_average_confirmed, average, susceptible, recovered, deaths, cumulative, startday, cost):
     """ calculate SIR model for a country, up till a certain day, with a set of initial parameters """
-    population = population0
-    incubation = incubation0
-    infected = infected0
-    recovered = 0
-    deaths = 0
-    cumulative = infected + recovered + deaths
-    susceptible = population - incubation - infected -recovered - deaths
     cost = 0
 
-    for sirday in range(0, dday + 1):
+    # While fitting, dday will always be startday + window and we will already have the sir values until startday
+    # After fitting we want to generate the values for every day, so we will start from zero again.
+    for sirday in range(startday, dday + 1):
         lamb = (gamma + delta) * listr0[sirday]
         d_susceptible = - lamb * infected * (susceptible / population)
         d_incubation = lamb * infected * (susceptible / population) - epsilon * incubation
@@ -31,17 +27,35 @@ def SIR(countries_data, country, dday, population0, incubation0, infected0, epsi
         if sirday < len(countries_data[country]['confirmed']) - average:
             #cost += (cumulative - countries_data[country]['confirmed'][sirday]) ** 2
             cost += (cumulative - running_average_confirmed[sirday]) ** 2
+        if sirday == startday:
+            values_today = {
+                'population': population,
+                'susceptible': susceptible,
+                'incubation': incubation,
+                'infected': infected,
+                'recovered': recovered,
+                'deaths': deaths,
+                'cumulative': cumulative,
+                'risk': risk,
+                'd_infected': d_infected,
+                'd_deaths': d_deaths,
+                'infected_new': infected_new,
+                'cost': cost,
+            }
     sir = {
+        'population': population,
         'susceptible': susceptible,
+        'incubation': incubation,
         'infected': infected,
         'recovered': recovered,
         'deaths': deaths,
         'cumulative': cumulative,
-        'cost': cost,
+        'risk': risk,
         'd_infected': d_infected,
         'd_deaths': d_deaths,
         'infected_new': infected_new,
-        'risk': risk,
+        'cost': cost,
+        'values_today': values_today,
     }
     return sir
 
@@ -73,33 +87,52 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
     gamma = (1 - CFR) / 12.4
     delta = CFR / 10.4
 
-    # These ones actually don't matter that much. Infections at the start are from abroad, not community spread.
-    # Which means we will get unrealistic values in the beginning of the graphs until community spread starts to dominate.
-    incubation0 = 5
-    infected0 = 1
-
     # Initial values for this country
-    population0 = int(countries[country][2])
+    initial_values = {
+        'day': 0,
+        'population': int(countries[country][2]),
+        'susceptible': int(countries[country][2]),
+        'incubation': 1,
+        'infected': 1,
+        'recovered': 0,
+        'deaths': 0,
+        'cumulative': 0,
+        'cost': 0,
+    }
     running_average_confirmed = running_mean(countries_data[country]['confirmed'], average)
 
     # create a list of default R0 values. They will be replaced with better values later.
     listr0 = []
+    bestcost = 0
+    best_values = copy.deepcopy(initial_values)
     for day in range(0, len(countries_data[country]['confirmed']) + future):
         listr0.append(4.3)
 
     # fit model to the data
     for day in range(0, len(countries_data[country]['confirmed']) - window):
         bestr0 = listr0[day]
-        sir = SIR(countries_data, country, day + window, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed, average)
-        bestcost = sir['cost']
+        bestcost = 1000_000_000_000
+        previous_values = copy.deepcopy(best_values)
         # range uses int, so we will need to divide this r0 by 100 later: 5 should become 0.05. 
         for r0 in range(10, 2000, 5):
             # set this selected r0 for all following days
             for futureday in range(0, len(listr0) - day):
                 # r0 is still an integer. Divide it by 100
                 listr0[day + futureday] = r0 / 100
-            sir_temp = SIR(countries_data, country, day + window, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed, average)
+            sir_temp = SIR(countries_data, country, day + window, previous_values['population'], previous_values['incubation'], previous_values['infected'], epsilon, gamma, delta, listr0, running_average_confirmed, average, previous_values['susceptible'], previous_values['recovered'], previous_values['deaths'], previous_values['cumulative'], day, previous_values['cost'])
             if sir_temp['cost'] < bestcost:
+                # save values of currently best fit to use as starting point for next day
+                best_values = {
+                    'day': day,
+                    'population': sir_temp['values_today']['population'],
+                    'susceptible': sir_temp['values_today']['susceptible'],
+                    'incubation': sir_temp['values_today']['incubation'],
+                    'infected': sir_temp['values_today']['infected'],
+                    'recovered': sir_temp['values_today']['recovered'],
+                    'deaths': sir_temp['values_today']['deaths'],
+                    'cumulative': sir_temp['values_today']['cumulative'],
+                    'cost': sir_temp['values_today']['cost']
+                }
                 bestcost = sir_temp['cost']
                 # r0 is still an integer. Divide it by 100
                 bestr0 = r0 / 100
@@ -120,7 +153,7 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
     list_risk = []
     # Append the daily values to the lists
     for day in range(0,len(countries_data[country]['confirmed']) + future):
-        temp_sir = SIR(countries_data, country, day, population0, incubation0, infected0, epsilon, gamma, delta, listr0, running_average_confirmed, average)
+        temp_sir = SIR(countries_data, country, day, initial_values['population'], initial_values['incubation'], initial_values['infected'], epsilon, gamma, delta, listr0, running_average_confirmed, average, initial_values['susceptible'], initial_values['recovered'], initial_values['deaths'], initial_values['cumulative'], 0, 0)
         list_susceptible.append(temp_sir['susceptible'])
         list_infected.append(temp_sir['infected'])
         list_recovered.append(temp_sir['recovered'])

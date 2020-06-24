@@ -36,7 +36,7 @@ Valid options are: `all`,  `world`, `USA`
 
 After generating the JSON files, a graph will be output for one of the states.
 
-![Example graph](./some-country.png "Example graph")
+![Example graph](./example-graph.png "Example graph")
 
 ---
 ## Disclaimer
