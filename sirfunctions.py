@@ -60,14 +60,14 @@ def SIR(countries_data, country, dday, population, incubation, infected, epsilon
     return sir
 
 
-def country_SIR(countries, countries_data, country, window = 4, future = 30, average = 3):
+def country_SIR(countries, countries_data, country, window = 4, future = 30, average = 3, epsilon_tau = 2, gamma_tau = 12.4, delta_tau = 10.4):
     """ calculate SIR model for a country, with a certain window size, and a number of days ahead """
 
     CFR = country_CFR(countries_data, country)
     # Hardcoded parameters.
-    epsilon = 1/2
-    gamma = (1 - CFR['CFR']) / 12.4
-    delta = CFR['CFR'] / 10.4
+    epsilon = 1 / epsilon_tau
+    gamma = (1 - CFR['CFR']) / gamma_tau
+    delta = CFR['CFR'] / delta_tau
 
     # Initial values for this country
     initial_values = {
@@ -159,6 +159,7 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
         'r0': listr0,
         'CFR': CFR['CFR'],
         'CFR_std': CFR['CFR_std'],
+        'cost': bestcost,
     }
     return country_sir
 
