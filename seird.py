@@ -16,13 +16,38 @@ from dataloader import load_data
 
 
 def parallel_sir(country_id):
-    some_country = country_SIR(countries, countries_data, country_id, average = average, future = future)
-    print(f"\t{countries_data[country_id]['name']} -> {some_country['r0'][-1]}")
+    """"Calculate different variations of SIR for a country."""
+    variations = []
+    # Vary epsilon_tau
+    for epsilon_k in range(0,2):
+        epsilon_tau = 1 + epsilon_k
+        # Vary delta_tau
+        for delta_k in range(0,3):
+            delta_tau = 8.4 + delta_k
+            # Vary gamma_tau
+            for gamma_k in range(0, 3):
+                gamma_tau = 10.4 + gamma_k
+                variation_sir = country_SIR(countries, countries_data, country_id, window = 4, future = future, average = average, epsilon_tau = epsilon_tau, gamma_tau = gamma_tau, delta_tau = delta_tau)
+                print(f"\t{countries_data[country_id]['name']} -> {variation_sir['r0'][-1]} | {gamma_tau} {variation_sir['cost']}")
+                variations.append({
+                    'epsilon_tau': epsilon_tau,
+                    'gamma_tau': gamma_tau,
+                    'delta_tau': delta_tau,
+                    'cost': variation_sir['cost'],
+                    'sir': variation_sir,
+                })
+    # Get the variation with best fit
+    variations_costs = []
+    for variation in variations:
+        variations_costs.append(variation['cost'])
+    best_fit = variations_costs.index(min(variations_costs))
+    # Return best fit and variations
     country_sir = {
         'country_id': country_id,
         'name': countries_data[country_id]['name'],
         'iso': countries[country_id][0],
-        'sir': some_country,
+        'sir': variations[best_fit]['sir'],
+        'variations': variations,
     }
     return country_sir 
 
