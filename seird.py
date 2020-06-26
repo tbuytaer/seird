@@ -25,10 +25,9 @@ def parallel_sir(country_id):
         for delta_k in range(0,3):
             delta_tau = 8.4 + delta_k
             # Vary gamma_tau
-            for gamma_k in range(0, 3):
+            for gamma_k in range(0,3):
                 gamma_tau = 10.4 + gamma_k
                 variation_sir = country_SIR(countries, countries_data, country_id, window = 4, future = future, average = average, epsilon_tau = epsilon_tau, gamma_tau = gamma_tau, delta_tau = delta_tau)
-                print(f"\t{countries_data[country_id]['name']} -> {variation_sir['r0'][-1]} | {gamma_tau} {variation_sir['cost']}")
                 variations.append({
                     'epsilon_tau': epsilon_tau,
                     'gamma_tau': gamma_tau,
@@ -38,9 +37,13 @@ def parallel_sir(country_id):
                 })
     # Get the variation with best fit
     variations_costs = []
+    variations_r0 = []
     for variation in variations:
         variations_costs.append(variation['cost'])
+        variations_r0.append(variation['sir']['r0'])
     best_fit = variations_costs.index(min(variations_costs))
+    r0_average = numpy.average(variations_r0, axis=0)
+    r0_std = numpy.std(variations_r0, axis=0)
     # Return best fit and variations
     country_sir = {
         'country_id': country_id,
@@ -48,7 +51,10 @@ def parallel_sir(country_id):
         'iso': countries[country_id][0],
         'sir': variations[best_fit]['sir'],
         'variations': variations,
+        'r0_average': r0_average,
+        'r0_std': r0_std,
     }
+    print(f"{country_id} | {country_sir['name']} -> {country_sir['sir']['r0'][-1]}")
     return country_sir 
 
 
