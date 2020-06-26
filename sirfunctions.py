@@ -122,45 +122,8 @@ def country_SIR(countries, countries_data, country, window = 4, future = 30, ave
         # We found a good r0 for this day, set it for all the following days
         for futureday in range(0, len(listr0) - day):
             listr0[day + futureday] = bestr0
-
-    # Generate lists of data for the plots and exports
-    list_susceptible = []
-    list_infected = []
-    list_recovered = []
-    list_deaths = []
-    list_cumulative = []
-    list_d_infected = []
-    list_d_deaths = []
-    list_infected_new = []
-    list_risk = []
-    # Append the daily values to the lists
-    for day in range(0,len(countries_data[country]['confirmed']) + future):
-        temp_sir = SIR(countries_data, country, day, initial_values['population'], initial_values['incubation'], initial_values['infected'], epsilon, gamma, delta, listr0, running_average_confirmed, average, initial_values['susceptible'], initial_values['recovered'], initial_values['deaths'], initial_values['cumulative'], 0, 0)
-        list_susceptible.append(temp_sir['susceptible'])
-        list_infected.append(temp_sir['infected'])
-        list_recovered.append(temp_sir['recovered'])
-        list_deaths.append(temp_sir['deaths'])
-        list_cumulative.append(temp_sir['cumulative'])
-        list_d_infected.append(temp_sir['d_infected'])
-        list_d_deaths.append(temp_sir['d_deaths'])
-        list_infected_new.append(temp_sir['infected_new'])
-        list_risk.append(temp_sir['risk'])
-    # Return the lists
-    country_sir = {
-        'susceptible': list_susceptible,
-        'infected': list_infected,
-        'recovered': list_recovered,
-        'deaths': list_deaths,
-        'cumulative': list_cumulative,
-        'd_infected': list_d_infected,
-        'd_deaths': list_d_deaths,
-        'infected_new': list_infected_new,
-        'risk': list_risk,
-        'r0': listr0,
-        'CFR': CFR['CFR'],
-        'CFR_std': CFR['CFR_std'],
-        'cost': bestcost,
-    }
+    country_sir = generate_lists(countries_data, country, CFR, initial_values, future, average, epsilon, gamma, delta, listr0, running_average_confirmed)
+    country_sir['cost'] = bestcost
     return country_sir
 
 
@@ -214,3 +177,43 @@ def country_CFR(countries_data, country):
         'CFR_std': numpy.std(cfr_temp),
     }
     return CFR
+
+def generate_lists(countries_data, country, CFR, initial_values, future, average, epsilon, gamma, delta, listr0, running_average_confirmed):
+    """ Generate lists of data for the plots and exports. """
+    list_susceptible = []
+    list_infected = []
+    list_recovered = []
+    list_deaths = []
+    list_cumulative = []
+    list_d_infected = []
+    list_d_deaths = []
+    list_infected_new = []
+    list_risk = []
+    # Append the daily values to the lists
+    for day in range(0,len(countries_data[country]['confirmed']) + future):
+        temp_sir = SIR(countries_data, country, day, initial_values['population'], initial_values['incubation'], initial_values['infected'], epsilon, gamma, delta, listr0, running_average_confirmed, average, initial_values['susceptible'], initial_values['recovered'], initial_values['deaths'], initial_values['cumulative'], 0, 0)
+        list_susceptible.append(temp_sir['susceptible'])
+        list_infected.append(temp_sir['infected'])
+        list_recovered.append(temp_sir['recovered'])
+        list_deaths.append(temp_sir['deaths'])
+        list_cumulative.append(temp_sir['cumulative'])
+        list_d_infected.append(temp_sir['d_infected'])
+        list_d_deaths.append(temp_sir['d_deaths'])
+        list_infected_new.append(temp_sir['infected_new'])
+        list_risk.append(temp_sir['risk'])
+    # Return the lists
+    country_sir = {
+        'susceptible': list_susceptible,
+        'infected': list_infected,
+        'recovered': list_recovered,
+        'deaths': list_deaths,
+        'cumulative': list_cumulative,
+        'd_infected': list_d_infected,
+        'd_deaths': list_d_deaths,
+        'infected_new': list_infected_new,
+        'risk': list_risk,
+        'r0': listr0,
+        'CFR': CFR['CFR'],
+        'CFR_std': CFR['CFR_std'],
+    }
+    return country_sir
