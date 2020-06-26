@@ -11,12 +11,29 @@ import sys
 
 from sirfunctions import SIR
 from sirfunctions import country_SIR
+from sirfunctions import country_CFR
+from sirfunctions import running_mean
+from sirfunctions import generate_lists
 from dataloader import download_data
 from dataloader import load_data
 
 
 def parallel_sir(country_id):
     """"Calculate different variations of SIR for a country."""
+    CFR = country_CFR(countries_data, country_id)
+    running_average_confirmed = running_mean(countries_data[country_id]['confirmed'], average)
+    # Initial values for this country
+    initial_values = {
+        'day': 0,
+        'population': int(countries[country_id][2]),
+        'susceptible': int(countries[country_id][2]),
+        'incubation': 1,
+        'infected': 1,
+        'recovered': 0,
+        'deaths': 0,
+        'cumulative': 0,
+        'cost': 0,
+    }
     variations = []
     # Vary epsilon_tau
     for epsilon_k in range(0,2):
@@ -27,29 +44,31 @@ def parallel_sir(country_id):
             # Vary gamma_tau
             for gamma_k in range(0,3):
                 gamma_tau = 10.4 + gamma_k
-                variation_sir = country_SIR(countries, countries_data, country_id, window = 4, future = future, average = average, epsilon_tau = epsilon_tau, gamma_tau = gamma_tau, delta_tau = delta_tau)
+                variation_sir = country_SIR(countries, countries_data, country_id, CFR, initial_values, running_average_confirmed, window = 4, future = future, average = average, epsilon_tau = epsilon_tau, gamma_tau = gamma_tau, delta_tau = delta_tau)
                 variations.append({
                     'epsilon_tau': epsilon_tau,
                     'gamma_tau': gamma_tau,
                     'delta_tau': delta_tau,
                     'cost': variation_sir['cost'],
-                    'sir': variation_sir,
+                    'r0': variation_sir['r0'],
                 })
     # Get the variation with best fit
     variations_costs = []
     variations_r0 = []
     for variation in variations:
         variations_costs.append(variation['cost'])
-        variations_r0.append(variation['sir']['r0'])
-    best_fit = variations_costs.index(min(variations_costs))
+        variations_r0.append(variation['r0'])
+    best_fit_index = variations_costs.index(min(variations_costs))
     r0_average = numpy.average(variations_r0, axis=0)
     r0_std = numpy.std(variations_r0, axis=0)
+    # Generate the data points to plot and output
+    sir = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], variations[best_fit_index]['r0'], running_average_confirmed)
     # Return best fit and variations
     country_sir = {
         'country_id': country_id,
         'name': countries_data[country_id]['name'],
         'iso': countries[country_id][0],
-        'sir': variations[best_fit]['sir'],
+        'sir': sir,
         'variations': variations,
         'r0_average': r0_average,
         'r0_std': r0_std,
@@ -167,7 +186,7 @@ def generate_jsons():
     plt.style.use('bmh')
     fig, axs = plt.subplots(4, figsize=(15,20), gridspec_kw={'height_ratios': [2,1,1,1]})
     chosen_country = 16
-    some_country = country_SIR(countries, countries_data, chosen_country, average = average, future = future)
+    some_country = countrysirs[chosen_country]['sir']
 
     x_values = list(range(number_of_days))
     x_values2 = list(range(number_of_days + future))
