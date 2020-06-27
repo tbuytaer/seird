@@ -35,23 +35,25 @@ def parallel_sir(country_id):
         'cost': 0,
     }
     variations = []
-    # Vary epsilon_tau
-    for epsilon_k in range(0,2):
-        epsilon_tau = 1 + epsilon_k
-        # Vary delta_tau
-        for delta_k in range(0,3):
-            delta_tau = 8.4 + delta_k
-            # Vary gamma_tau
-            for gamma_k in range(0,3):
-                gamma_tau = 10.4 + gamma_k
-                variation_sir = country_SIR(countries, countries_data, country_id, CFR, initial_values, running_average_confirmed, window = 4, future = future, average = average, epsilon_tau = epsilon_tau, gamma_tau = gamma_tau, delta_tau = delta_tau)
-                variations.append({
-                    'epsilon_tau': epsilon_tau,
-                    'gamma_tau': gamma_tau,
-                    'delta_tau': delta_tau,
-                    'cost': variation_sir['cost'],
-                    'r0': variation_sir['r0'],
-                })
+    for window in range(4,8):
+        # Vary epsilon_tau
+        for epsilon_k in range(0,2):
+            epsilon_tau = 1 + epsilon_k
+            # Vary delta_tau
+            for delta_k in range(0,3):
+                delta_tau = 8.4 + delta_k
+                # Vary gamma_tau
+                for gamma_k in range(0,3):
+                    gamma_tau = 10.4 + gamma_k
+                    variation_sir = country_SIR(countries, countries_data, country_id, CFR, initial_values, running_average_confirmed, window = window, future = future, average = average, epsilon_tau = epsilon_tau, gamma_tau = gamma_tau, delta_tau = delta_tau)
+                    variations.append({
+                        'window': window,
+                        'epsilon_tau': epsilon_tau,
+                        'gamma_tau': gamma_tau,
+                        'delta_tau': delta_tau,
+                        'cost': variation_sir['cost'],
+                        'r0': variation_sir['r0'],
+                    })
     # Get the variation with best fit
     variations_costs = []
     variations_r0 = []
@@ -61,19 +63,29 @@ def parallel_sir(country_id):
     best_fit_index = variations_costs.index(min(variations_costs))
     r0_average = numpy.average(variations_r0, axis=0)
     r0_std = numpy.std(variations_r0, axis=0)
+    r0_min = numpy.concatenate([variations[best_fit_index]['r0'][:150], variations[best_fit_index]['r0'][150:] - r0_std[150:]])
+    r0_plus = numpy.concatenate([variations[best_fit_index]['r0'][:150], variations[best_fit_index]['r0'][150:] + r0_std[150:]])
     # Generate the data points to plot and output
-    sir = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], variations[best_fit_index]['r0'], running_average_confirmed)
+    sir_best = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], variations[best_fit_index]['r0'], running_average_confirmed)
+    sir_average = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], r0_average, running_average_confirmed)
+    sir_min = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], r0_min, running_average_confirmed)
+    sir_plus = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], r0_plus, running_average_confirmed)    
     # Return best fit and variations
     country_sir = {
         'country_id': country_id,
         'name': countries_data[country_id]['name'],
         'iso': countries[country_id][0],
-        'sir': sir,
+        'sir': sir_best,
+        'sir_average': sir_average,
+        'sir_min': sir_min,
+        'sir_plus': sir_plus,
         'variations': variations,
-        'r0_average': r0_average,
         'r0_std': r0_std,
+        'r0_average': r0_average,
+        'r0_min': r0_min,
+        'r0_plus': r0_plus,
     }
-    print(f"{country_id} | {country_sir['name']} -> {country_sir['sir']['r0'][-1]}")
+    print(f"{country_id} | {country_sir['name']} -> {country_sir['sir']['r0'][-1]} +/- {country_sir['r0_std'][-1]}")
     return country_sir 
 
 
@@ -196,15 +208,17 @@ def generate_jsons():
     axs[0].scatter(x_values, countries_data[chosen_country]['deaths'], s=4, c='firebrick')
     # Line plots with calculcated values from model
     axs[0].plot(x_values2, some_country['cumulative'], linewidth=1, c='darkslateblue')
+    axs[0].fill_between(x_values2, countrysirs[chosen_country]['sir_plus']['cumulative'], countrysirs[chosen_country]['sir_min']['cumulative'], facecolor='firebrick', alpha=0.2)
     axs[0].plot(x_values2, some_country['deaths'], linewidth=1, c='firebrick')
     axs[0].plot(x_values2, some_country['infected'], linewidth=1, c='cornflowerblue')
     axs[0].fill_between(x_values2, some_country['infected'], facecolor='lightsteelblue')
 
     # Line plot with calculated R-value from model
-    axs[1].set_title(f"Last R: {some_country['r0'][-1]}", loc='right')
+    axs[1].set_title(f"Last R: {some_country['r0'][-1]:.2f}", loc='right')
     axs[1].set_ylabel("R-value")
     axs[1].plot(x_values2, some_country['r0'], linewidth=1, c='steelblue')
     axs[1].fill_between(x_values2, some_country['r0'], facecolor='lightsteelblue')
+    axs[1].fill_between(x_values2, countrysirs[chosen_country]['r0_plus'], countrysirs[chosen_country]['r0_min'], facecolor='firebrick', alpha=0.2)
     axs[1].set_ylim([0,5])
 
     # Scatter plots with values from JH
