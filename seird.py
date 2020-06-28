@@ -181,6 +181,11 @@ def generate_jsons():
         jason_file = f"export/{region}-{country}-c-min.json"
         with open(jason_file, 'w') as f:
             json.dump(jason, f, indent=4)
+        # Calculated files: confirmed +/- standard deviation
+        jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'minvalue': countrysirs[country]['sir_min']['cumulative'][day], 'maxvalue': countrysirs[country]['sir_plus']['cumulative'][day] } for day in range(len(countrysirs[country]['sir_plus']['cumulative']))]
+        jason_file = f"export/{region}-{country}-c-range.json"
+        with open(jason_file, 'w') as f:
+            json.dump(jason, f, indent=4)
 
         # Calculated files: deaths
         jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir']['deaths'][day] } for day in range(len(countrysirs[country]['sir']['deaths']))]
