@@ -22,6 +22,7 @@ def parallel_sir(country_id):
     """"Calculate different variations of SIR for a country."""
     CFR = country_CFR(countries_data, country_id)
     running_average_confirmed = running_mean(countries_data[country_id]['confirmed'], average)
+    running_average_deaths = running_mean(countries_data[country_id]['deaths'], average)
     # Initial values for this country
     initial_values = {
         'day': 0,
@@ -33,6 +34,7 @@ def parallel_sir(country_id):
         'deaths': 0,
         'cumulative': 0,
         'cost': 0,
+        'cost2': 0,
     }
     variations = []
     # stepsize 2 makes it about 8 times faster than stepsize 1
@@ -47,31 +49,38 @@ def parallel_sir(country_id):
                 # Vary gamma_tau
                 for gamma_k in range(0, 5, stepsize):
                     gamma_tau = 10.4 + gamma_k
-                    variation_sir = country_SIR(countries, countries_data, country_id, CFR, initial_values, running_average_confirmed, window = window, future = future, average = average, epsilon_tau = epsilon_tau, gamma_tau = gamma_tau, delta_tau = delta_tau)
+                    variation_sir = country_SIR(countries, countries_data, country_id, CFR, initial_values, running_average_confirmed, running_average_deaths, window = window, future = future, average = average, epsilon_tau = epsilon_tau, gamma_tau = gamma_tau, delta_tau = delta_tau)
                     variations.append({
                         'window': window,
                         'epsilon_tau': epsilon_tau,
                         'gamma_tau': gamma_tau,
                         'delta_tau': delta_tau,
-                        'cost': variation_sir['cost'],
                         'r0': variation_sir['r0'],
+                        'cost': variation_sir['cost'],
+                        'cost2': variation_sir['cost2'],
                     })
     # Get the variation with best fit
     variations_costs = []
+    variations_costs2 = []
+    variations_totalcosts = []
     variations_r0 = []
     for variation in variations:
         variations_costs.append(variation['cost'])
+        variations_costs2.append(variation['cost2'])
+        variations_totalcosts.append(variation['cost'] + variation['cost2'])
+        
         variations_r0.append(variation['r0'])
-    best_fit_index = variations_costs.index(min(variations_costs))
+    best_fit_index = variations_totalcosts.index(min(variations_totalcosts))
+
     r0_average = numpy.average(variations_r0, axis=0)
     r0_std = numpy.std(variations_r0, axis=0)
     r0_min = numpy.concatenate([variations[best_fit_index]['r0'][:150], variations[best_fit_index]['r0'][150:] - r0_std[150:]])
     r0_plus = numpy.concatenate([variations[best_fit_index]['r0'][:150], variations[best_fit_index]['r0'][150:] + r0_std[150:]])
     # Generate the data points to plot and output
-    sir_best = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], variations[best_fit_index]['r0'], running_average_confirmed)
-    sir_average = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], r0_average, running_average_confirmed)
-    sir_min = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], r0_min, running_average_confirmed)
-    sir_plus = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], r0_plus, running_average_confirmed)    
+    sir_best = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], variations[best_fit_index]['r0'], running_average_confirmed, running_average_deaths)
+    sir_average = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], r0_average, running_average_confirmed, running_average_deaths)
+    sir_min = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], r0_min, running_average_confirmed, running_average_deaths)
+    sir_plus = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], r0_plus, running_average_confirmed, running_average_deaths)    
     # Return best fit and variations
     country_sir = {
         'country_id': country_id,
