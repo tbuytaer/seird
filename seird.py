@@ -11,19 +11,92 @@ import sys
 
 from sirfunctions import SIR
 from sirfunctions import country_SIR
+from sirfunctions import country_CFR
+from sirfunctions import running_mean
+from sirfunctions import generate_lists
 from dataloader import download_data
 from dataloader import load_data
 
 
 def parallel_sir(country_id):
-    some_country = country_SIR(countries, countries_data, country_id, average = average, future = future)
-    print(f"\t{countries_data[country_id]['name']} -> {some_country['r0'][-1]}")
+    """"Calculate different variations of SIR for a country."""
+    CFR = country_CFR(countries_data, country_id)
+    running_average_confirmed = running_mean(countries_data[country_id]['confirmed'], average)
+    running_average_deaths = running_mean(countries_data[country_id]['deaths'], average)
+    # Initial values for this country
+    initial_values = {
+        'day': 0,
+        'population': int(countries[country_id][2]),
+        'susceptible': int(countries[country_id][2]),
+        'incubation': 1,
+        'infected': 1,
+        'recovered': 0,
+        'deaths': 0,
+        'cumulative': 0,
+        'cost': 0,
+        'cost2': 0,
+    }
+    variations = []
+    # stepsize 2 makes it about 8 times faster than stepsize 1
+    stepsize = 2
+    for window in range(4, 10, stepsize):
+        # Vary epsilon_tau
+        for epsilon_k in range(0, 3, stepsize):
+            epsilon_tau = 1 + epsilon_k
+            # Vary delta_tau
+            for delta_k in range(0, 5, stepsize):
+                delta_tau = 8.4 + delta_k
+                # Vary gamma_tau
+                for gamma_k in range(0, 5, stepsize):
+                    gamma_tau = 10.4 + gamma_k
+                    variation_sir = country_SIR(countries, countries_data, country_id, CFR, initial_values, running_average_confirmed, running_average_deaths, window = window, future = future, average = average, epsilon_tau = epsilon_tau, gamma_tau = gamma_tau, delta_tau = delta_tau)
+                    variations.append({
+                        'window': window,
+                        'epsilon_tau': epsilon_tau,
+                        'gamma_tau': gamma_tau,
+                        'delta_tau': delta_tau,
+                        'r0': variation_sir['r0'],
+                        'cost': variation_sir['cost'],
+                        'cost2': variation_sir['cost2'],
+                    })
+    # Get the variation with best fit
+    variations_costs = []
+    variations_costs2 = []
+    variations_totalcosts = []
+    variations_r0 = []
+    for variation in variations:
+        variations_costs.append(variation['cost'])
+        variations_costs2.append(variation['cost2'])
+        variations_totalcosts.append(variation['cost'] + variation['cost2'])
+        
+        variations_r0.append(variation['r0'])
+    best_fit_index = variations_totalcosts.index(min(variations_totalcosts))
+
+    r0_average = numpy.average(variations_r0, axis=0)
+    r0_std = numpy.std(variations_r0, axis=0)
+    r0_min = numpy.concatenate([variations[best_fit_index]['r0'][:150], variations[best_fit_index]['r0'][150:] - r0_std[150:]])
+    r0_plus = numpy.concatenate([variations[best_fit_index]['r0'][:150], variations[best_fit_index]['r0'][150:] + r0_std[150:]])
+    # Generate the data points to plot and output
+    sir_best = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], variations[best_fit_index]['r0'], running_average_confirmed, running_average_deaths)
+    sir_average = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], r0_average, running_average_confirmed, running_average_deaths)
+    sir_min = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], r0_min, running_average_confirmed, running_average_deaths)
+    sir_plus = generate_lists(countries_data, country_id, CFR, initial_values, future, average, variations[best_fit_index]['epsilon_tau'], variations[best_fit_index]['gamma_tau'], variations[best_fit_index]['delta_tau'], r0_plus, running_average_confirmed, running_average_deaths)    
+    # Return best fit and variations
     country_sir = {
         'country_id': country_id,
         'name': countries_data[country_id]['name'],
         'iso': countries[country_id][0],
-        'sir': some_country,
+        'sir': sir_best,
+        'sir_average': sir_average,
+        'sir_min': sir_min,
+        'sir_plus': sir_plus,
+        'variations': variations,
+        'r0_std': r0_std,
+        'r0_average': r0_average,
+        'r0_min': r0_min,
+        'r0_plus': r0_plus,
     }
+    print(f"{country_id} | {country_sir['name']} -> {country_sir['sir']['r0'][-1]} +/- {country_sir['r0_std'][-1]}")
     return country_sir 
 
 
@@ -107,6 +180,21 @@ def generate_jsons():
         jason_file = f"export/{region}-{country}-c.json"
         with open(jason_file, 'w') as f:
             json.dump(jason, f, indent=4)
+        # Calculated files: confirmed + standard deviation
+        jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir_plus']['cumulative'][day] } for day in range(len(countrysirs[country]['sir_plus']['cumulative']))]
+        jason_file = f"export/{region}-{country}-c-plus.json"
+        with open(jason_file, 'w') as f:
+            json.dump(jason, f, indent=4)
+        # Calculated files: confirmed - standard deviation
+        jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir_min']['cumulative'][day] } for day in range(len(countrysirs[country]['sir_min']['cumulative']))]
+        jason_file = f"export/{region}-{country}-c-min.json"
+        with open(jason_file, 'w') as f:
+            json.dump(jason, f, indent=4)
+        # Calculated files: confirmed +/- standard deviation
+        jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'minvalue': countrysirs[country]['sir_min']['cumulative'][day], 'maxvalue': countrysirs[country]['sir_plus']['cumulative'][day] } for day in range(len(countrysirs[country]['sir_plus']['cumulative']))]
+        jason_file = f"export/{region}-{country}-c-range.json"
+        with open(jason_file, 'w') as f:
+            json.dump(jason, f, indent=4)
 
         # Calculated files: deaths
         jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['sir']['deaths'][day] } for day in range(len(countrysirs[country]['sir']['deaths']))]
@@ -125,6 +213,16 @@ def generate_jsons():
         jason_file = f"export/{region}-{country}-r0.json"
         with open(jason_file, 'w') as f:
             json.dump(jason, f, indent=4)
+        # Calculated files: Re + STD
+        jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['r0_plus'][day] } for day in range(len(countrysirs[country]['r0_plus']))]
+        jason_file = f"export/{region}-{country}-r0-plus.json"
+        with open(jason_file, 'w') as f:
+            json.dump(jason, f, indent=4)
+        # Calculated files: Re - STD
+        jason = [{ 'date': (date(2020, 1, 22) + timedelta(days=day)).strftime("%Y-%m-%d"), 'value': countrysirs[country]['r0_min'][day] } for day in range(len(countrysirs[country]['r0_min']))]
+        jason_file = f"export/{region}-{country}-r0-min.json"
+        with open(jason_file, 'w') as f:
+            json.dump(jason, f, indent=4)
 
     # TODO: Recovered world map?
     # TODO: Diff infections to plot per country? (JH & calculated)
@@ -136,36 +234,36 @@ def generate_jsons():
     plt.style.use('bmh')
     fig, axs = plt.subplots(4, figsize=(15,20), gridspec_kw={'height_ratios': [2,1,1,1]})
     chosen_country = 16
-    some_country = country_SIR(countries, countries_data, chosen_country, average = average, future = future)
 
     x_values = list(range(number_of_days))
     x_values2 = list(range(number_of_days + future))
-    # Scatter plots with values from JH
+    # First plot: infections, cumulative, deaths - JH & calculated
     axs[0].set_title(countries[chosen_country][1])
     axs[0].scatter(x_values, countries_data[chosen_country]['confirmed'], s=4, c='cadetblue')
+    axs[0].plot(x_values2, countrysirs[chosen_country]['sir']['cumulative'], linewidth=1, c='darkslateblue')
+    axs[0].fill_between(x_values2, countrysirs[chosen_country]['sir_plus']['cumulative'], countrysirs[chosen_country]['sir_min']['cumulative'], facecolor='firebrick', alpha=0.2)
+    axs[0].fill_between(x_values2, countrysirs[chosen_country]['sir']['infected'], facecolor='lightsteelblue')
+    axs[0].plot(x_values2, countrysirs[chosen_country]['sir']['infected'], linewidth=1, c='cornflowerblue')
     axs[0].scatter(x_values, countries_data[chosen_country]['deaths'], s=4, c='firebrick')
-    # Line plots with calculcated values from model
-    axs[0].plot(x_values2, some_country['cumulative'], linewidth=1, c='darkslateblue')
-    axs[0].plot(x_values2, some_country['deaths'], linewidth=1, c='firebrick')
-    axs[0].plot(x_values2, some_country['infected'], linewidth=1, c='cornflowerblue')
-    axs[0].fill_between(x_values2, some_country['infected'], facecolor='lightsteelblue')
+    axs[0].plot(x_values2, countrysirs[chosen_country]['sir']['deaths'], linewidth=1, c='firebrick') 
 
-    # Line plot with calculated R-value from model
-    axs[1].set_title(f"Last R: {some_country['r0'][-1]}", loc='right')
+    # Second plot: R - calculated
+    axs[1].set_title(f"Last R: {countrysirs[chosen_country]['sir']['r0'][-1]:.2f} +/- {countrysirs[chosen_country]['r0_std'][-1]:.2f}", loc='right')
     axs[1].set_ylabel("R-value")
-    axs[1].plot(x_values2, some_country['r0'], linewidth=1, c='steelblue')
-    axs[1].fill_between(x_values2, some_country['r0'], facecolor='lightsteelblue')
+    axs[1].plot(x_values2, countrysirs[chosen_country]['sir']['r0'], linewidth=1, c='steelblue')
+    axs[1].fill_between(x_values2, countrysirs[chosen_country]['sir']['r0'], facecolor='lightsteelblue')
+    axs[1].fill_between(x_values2, countrysirs[chosen_country]['r0_plus'], countrysirs[chosen_country]['r0_min'], facecolor='firebrick', alpha=0.2)
     axs[1].set_ylim([0,5])
 
-    # Scatter plots with values from JH
+    # Third plot: New infections - JH & calculated
     axs[2].set_ylabel("New infected")
     axs[2].scatter(x_values, countries_data[chosen_country]['d_confirmed'], s=4, c='darkslateblue')
-    axs[2].plot(x_values2, some_country['infected_new'], linewidth=1, c='royalblue')
+    axs[2].plot(x_values2, countrysirs[chosen_country]['sir']['infected_new'], linewidth=1, c='royalblue')
 
-    # Line plots with calculated values from model
+    # Fourth plot: New deaths - JH &s calculated
     axs[3].set_ylabel("New deaths")
     axs[3].scatter(x_values, countries_data[chosen_country]['d_deaths'], s=4, c='firebrick')
-    axs[3].plot(x_values2, some_country['d_deaths'], linewidth=1, c='firebrick')
+    axs[3].plot(x_values2, countrysirs[chosen_country]['sir']['d_deaths'], linewidth=1, c='firebrick')
 
     # Save plot with name of this state
     plt.savefig(f"./export/{countries[chosen_country][1]}.png", bbox_inches='tight')
