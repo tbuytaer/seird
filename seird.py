@@ -23,6 +23,8 @@ def parallel_sir(country_id):
     CFR = country_CFR(countries_data, country_id)
     running_average_confirmed = running_mean(countries_data[country_id]['confirmed'], average)
     running_average_deaths = running_mean(countries_data[country_id]['deaths'], average)
+    running_average_d_confirmed = running_mean(countries_data[country_id]['d_confirmed'], average)
+    running_average_d_deaths = running_mean(countries_data[country_id]['d_deaths'], average)
     # Initial values for this country
     initial_values = {
         'day': 0,
@@ -95,6 +97,8 @@ def parallel_sir(country_id):
         'r0_average': r0_average,
         'r0_min': r0_min,
         'r0_plus': r0_plus,
+        'running_average_d_confirmed': running_average_d_confirmed,
+        'running_average_d_deaths': running_average_d_deaths,
     }
     print(f"{country_id} | {country_sir['name']} -> {country_sir['sir']['r0'][-1]} +/- {country_sir['r0_std'][-1]}")
     return country_sir 
@@ -237,6 +241,7 @@ def generate_jsons():
 
     x_values = list(range(number_of_days))
     x_values2 = list(range(number_of_days + future))
+    x_values3 = list(range(len(countrysirs[chosen_country]['running_average_d_confirmed'])))
     # First plot: infections, cumulative, deaths - JH & calculated
     axs[0].set_title(countries[chosen_country][1])
     axs[0].scatter(x_values, countries_data[chosen_country]['confirmed'], s=4, c='cadetblue')
@@ -257,12 +262,12 @@ def generate_jsons():
 
     # Third plot: New infections - JH & calculated
     axs[2].set_ylabel("New infected")
-    axs[2].scatter(x_values, countries_data[chosen_country]['d_confirmed'], s=4, c='darkslateblue')
+    axs[2].scatter(x_values3, countrysirs[chosen_country]['running_average_d_confirmed'], s=4, c='darkslateblue')
     axs[2].plot(x_values2, countrysirs[chosen_country]['sir']['infected_new'], linewidth=1, c='royalblue')
 
     # Fourth plot: New deaths - JH &s calculated
     axs[3].set_ylabel("New deaths")
-    axs[3].scatter(x_values, countries_data[chosen_country]['d_deaths'], s=4, c='firebrick')
+    axs[3].scatter(x_values3, countrysirs[chosen_country]['running_average_d_deaths'], s=4, c='firebrick')
     axs[3].plot(x_values2, countrysirs[chosen_country]['sir']['d_deaths'], linewidth=1, c='firebrick')
 
     # Save plot with name of this state
