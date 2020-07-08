@@ -4,7 +4,6 @@ import copy
 def SIR(countries_data, country, dday, population, incubation, infected, CFR, epsilon_tau, gamma_tau, delta_tau, listr0, running_average_confirmed, running_average_deaths, average, susceptible, recovered, deaths, cumulative, startday, cost2):
     """ calculate SIR model for a country, up till a certain day, with a set of initial parameters """
     cost = 0
-    #cost2 = 0
     epsilon = 1 / epsilon_tau
     gamma = (1 - CFR['CFR']) / gamma_tau
     delta = CFR['CFR'] / delta_tau
@@ -29,7 +28,6 @@ def SIR(countries_data, country, dday, population, incubation, infected, CFR, ep
         population = susceptible + incubation + infected + recovered
         risk = infected * listr0[sirday] * 100_000 / population
         if sirday < len(countries_data[country]['confirmed']) - average:
-            #cost += (cumulative - countries_data[country]['confirmed'][sirday]) ** 2
             cost += (cumulative - running_average_confirmed[sirday]) ** 2
             cost2 += (deaths - running_average_deaths[sirday]) ** 2
         if sirday == startday:
@@ -82,7 +80,7 @@ def country_SIR(countries, countries_data, country, CFR, initial_values, running
         bestcost = 1000_000_000_000
         previous_values = copy.deepcopy(best_values)
         # range uses int, so we will need to divide this r0 by 100 later: 5 should become 0.05. 
-        for r0 in range(10, 2000, 5):
+        for r0 in range(10, 2000, 10):
             # set this selected r0 for all following days
             for futureday in range(0, len(listr0) - day):
                 # r0 is still an integer. Divide it by 100
