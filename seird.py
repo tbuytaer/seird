@@ -247,6 +247,7 @@ def generate_jsons():
         axs[0].plot(x_values2, countrysirs[country]['sir']['infected'], linewidth=1, c='cornflowerblue')
         axs[0].scatter(x_values, countries_data[country]['deaths'], s=4, c='firebrick')
         axs[0].plot(x_values2, countrysirs[country]['sir']['deaths'], linewidth=1, c='firebrick') 
+        axs[0].axvline(x=number_of_days, linewidth=1, c='grey')
 
         # Second plot: R - calculated
         axs[1].set_title(f"Last R: {countrysirs[country]['sir']['r0'][-1]:.2f} +/- {countrysirs[country]['r0_std'][-1]:.2f}", loc='right')
@@ -255,16 +256,19 @@ def generate_jsons():
         axs[1].fill_between(x_values2, countrysirs[country]['sir']['r0'], facecolor='lightsteelblue')
         axs[1].fill_between(x_values2, countrysirs[country]['r0_plus'], countrysirs[country]['r0_min'], facecolor='firebrick', alpha=0.2)
         axs[1].set_ylim([0,5])
+        axs[1].axvline(x=number_of_days, linewidth=1, c='grey')
 
         # Third plot: New infections - JH & calculated
         axs[2].set_ylabel("New infected")
         axs[2].scatter(x_values_d_confirmed, countrysirs[country]['running_average_d_confirmed'], s=4, c='darkslateblue')
         axs[2].plot(x_values2, countrysirs[country]['sir']['infected_new'], linewidth=1, c='royalblue')
+        axs[2].axvline(x=number_of_days, linewidth=1, c='grey')
 
         # Fourth plot: New deaths - JH &s calculated
         axs[3].set_ylabel("New deaths")
         axs[3].scatter(x_values_d_deaths, countrysirs[country]['running_average_d_deaths'], s=4, c='firebrick')
         axs[3].plot(x_values2, countrysirs[country]['sir']['d_deaths'], linewidth=1, c='firebrick')
+        axs[3].axvline(x=number_of_days, linewidth=1, c='grey')
 
         # Save plot with name of this state
         plt.savefig(f"./export/{countries[country][1]}.png", bbox_inches='tight')
@@ -275,7 +279,7 @@ os.system('clear')
 
 # Fit the model to data that has been averaged out over this amount of days before and after each date
 average = 3
-average_deaths = 6
+average_deaths = 3
 
 # Calculate this number of days ahead if current Re stays the same
 future = 21
