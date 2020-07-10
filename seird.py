@@ -24,7 +24,7 @@ def parallel_sir(country_id):
     running_average_confirmed = running_mean(countries_data[country_id]['confirmed'], average)
     running_average_deaths = running_mean(countries_data[country_id]['deaths'], average)
     running_average_d_confirmed = running_mean(countries_data[country_id]['d_confirmed'], average)
-    running_average_d_deaths = running_mean(countries_data[country_id]['d_deaths'], average)
+    running_average_d_deaths = running_mean(countries_data[country_id]['d_deaths'], average_deaths)
     # Initial values for this country
     initial_values = {
         'day': 0,
@@ -106,7 +106,6 @@ def parallel_sir(country_id):
 
 def generate_jsons():
     number_of_days = len(countries_data[1]['confirmed'])
-#    today = len(countries_data[1]['confirmed'])
 
     # Calculate SIR for all countries and output progress to terminal
     start = time.time()
@@ -229,16 +228,16 @@ def generate_jsons():
         with open(jason_file, 'w') as f:
             json.dump(jason, f, indent=4)
 
-    # TODO: Recovered world map?
-    # TODO: Recovered to plot per country? (JH & calculated)
-    # TODO: Risk to plot per country?
+        # TODO: Recovered world map?
+        # TODO: Recovered to plot per country? (JH & calculated)
+        # TODO: Risk to plot per country?
 
-    # Plot graph
+        # Plot graph
         fig, axs = plt.subplots(4, figsize=(15,20), gridspec_kw={'height_ratios': [2,1,1,1]})
-
         x_values = list(range(number_of_days))
         x_values2 = list(range(number_of_days + future))
-        x_values3 = list(range(len(countrysirs[country]['running_average_d_confirmed'])))
+        x_values_d_confirmed = list(range(len(countrysirs[country]['running_average_d_confirmed'])))
+        x_values_d_deaths = list(range(len(countrysirs[country]['running_average_d_deaths'])))
         # First plot: infections, cumulative, deaths - JH & calculated
         axs[0].set_title(countries[country][1])
         axs[0].scatter(x_values, countries_data[country]['confirmed'], s=4, c='cadetblue')
@@ -259,12 +258,12 @@ def generate_jsons():
 
         # Third plot: New infections - JH & calculated
         axs[2].set_ylabel("New infected")
-        axs[2].scatter(x_values3, countrysirs[country]['running_average_d_confirmed'], s=4, c='darkslateblue')
+        axs[2].scatter(x_values_d_confirmed, countrysirs[country]['running_average_d_confirmed'], s=4, c='darkslateblue')
         axs[2].plot(x_values2, countrysirs[country]['sir']['infected_new'], linewidth=1, c='royalblue')
 
         # Fourth plot: New deaths - JH &s calculated
         axs[3].set_ylabel("New deaths")
-        axs[3].scatter(x_values3, countrysirs[country]['running_average_d_deaths'], s=4, c='firebrick')
+        axs[3].scatter(x_values_d_deaths, countrysirs[country]['running_average_d_deaths'], s=4, c='firebrick')
         axs[3].plot(x_values2, countrysirs[country]['sir']['d_deaths'], linewidth=1, c='firebrick')
 
         # Save plot with name of this state
@@ -276,9 +275,10 @@ os.system('clear')
 
 # Fit the model to data that has been averaged out over this amount of days before and after each date
 average = 3
+average_deaths = 6
 
 # Calculate this number of days ahead if current Re stays the same
-future = 30
+future = 21
 
 # Download most recent data files from Jons Hopkins
 download_data()
