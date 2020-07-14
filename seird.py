@@ -242,9 +242,9 @@ def generate_jsons():
         axs[0].set_title(countries[country][1])
         axs[0].scatter(x_values, countries_data[country]['confirmed'], s=4, c='cadetblue')
         axs[0].plot(x_values2, countrysirs[country]['sir']['cumulative'], linewidth=1, c='darkslateblue')
-        axs[0].fill_between(x_values2, countrysirs[country]['sir_plus']['cumulative'], countrysirs[country]['sir_min']['cumulative'], facecolor='firebrick', alpha=0.2)
+        axs[0].fill_between(x_values2, countrysirs[country]['sir_plus']['cumulative'], countrysirs[country]['sir_min']['cumulative'], facecolor='darkslateblue', alpha=0.15)
         axs[0].fill_between(x_values2, countrysirs[country]['sir']['infected'], facecolor='lightsteelblue')
-        axs[0].plot(x_values2, countrysirs[country]['sir']['infected'], linewidth=1, c='cornflowerblue')
+        axs[0].plot(x_values2, countrysirs[country]['sir']['infected'], linewidth=1, c='steelblue')
         axs[0].scatter(x_values, countries_data[country]['deaths'], s=4, c='firebrick')
         axs[0].plot(x_values2, countrysirs[country]['sir']['deaths'], linewidth=1, c='firebrick') 
         axs[0].axvline(x=number_of_days, linewidth=1, c='grey')
@@ -254,20 +254,22 @@ def generate_jsons():
         axs[1].set_ylabel("R-value")
         axs[1].plot(x_values2, countrysirs[country]['sir']['r0'], linewidth=1, c='steelblue')
         axs[1].fill_between(x_values2, countrysirs[country]['sir']['r0'], facecolor='lightsteelblue')
-        axs[1].fill_between(x_values2, countrysirs[country]['r0_plus'], countrysirs[country]['r0_min'], facecolor='firebrick', alpha=0.2)
+        axs[1].fill_between(x_values2, countrysirs[country]['r0_plus'], countrysirs[country]['r0_min'], facecolor='darkslateblue', alpha=0.2)
         axs[1].set_ylim([0,5])
         axs[1].axvline(x=number_of_days, linewidth=1, c='grey')
 
         # Third plot: New infections - JH & calculated
         axs[2].set_ylabel("New infected")
-        axs[2].scatter(x_values_d_confirmed, countrysirs[country]['running_average_d_confirmed'], s=4, c='darkslateblue')
-        axs[2].plot(x_values2, countrysirs[country]['sir']['infected_new'], linewidth=1, c='royalblue')
+        axs[2].scatter(x_values_d_confirmed, countrysirs[country]['running_average_d_confirmed'], s=4, c='cadetblue')
+        axs[2].plot(x_values2, countrysirs[country]['sir']['infected_new'], linewidth=1, c='darkslateblue')
+        axs[2].fill_between(x_values2, countrysirs[country]['sir_plus']['infected_new'], countrysirs[country]['sir_min']['infected_new'], facecolor='darkslateblue', alpha=0.15)
         axs[2].axvline(x=number_of_days, linewidth=1, c='grey')
 
         # Fourth plot: New deaths - JH &s calculated
         axs[3].set_ylabel("New deaths")
         axs[3].scatter(x_values_d_deaths, countrysirs[country]['running_average_d_deaths'], s=4, c='firebrick')
         axs[3].plot(x_values2, countrysirs[country]['sir']['d_deaths'], linewidth=1, c='firebrick')
+        axs[3].fill_between(x_values2, countrysirs[country]['sir_plus']['d_deaths'], countrysirs[country]['sir_min']['d_deaths'], facecolor='firebrick', alpha=0.15)
         axs[3].axvline(x=number_of_days, linewidth=1, c='grey')
 
         # Save plot with name of this state
